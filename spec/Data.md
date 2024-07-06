@@ -19,18 +19,35 @@ There's `unit`, the top type, and `never`, the bottom type.
 
 ### Reference Types
 
-There's reference types, which store a reference to a variable. You can denote that with the `ref` keyword.
+There's reference types, which store a reference to a variable. You can denote that with the `ref` keyword. References are always non-null.
 
 References can be used to give a function a variable, without passing ownership.
 
 If you want to be able to edit the referenced variable, you can use `ref mut`, which denotes a reference to a mutable variable
 
+You take references to variables with `ref`, and if the type being referenced is mutable, the reference is automatically assumed to be mutable, downcasting if necessary.
+
 ```
 i32 nonRefX
-ref i32 x = ref nonRefX;
+ref i32 x = &nonRefX;
 
 mut i32 nonRefY;
-ref mut i32 y = nonRefY;
+ref mut i32 y = ref nonRefY;
+ref i32 yNonMut = ref nonRefY;
+```
+
+### Pointers
+
+Pointers are a lot like references, but without a lot of the compile-time checks that come with references. Pointers can access arbitrary places in memory, potentially causing unsafe behaviour. As such use of pointers is discouraged.
+
+Pointers use a C-style syntax, declaring them with the `*` symbol, and using `->` to access members. Unlike C, the `*` symbol goes before the type name. You use `&` to reference a variable, and use `*` as well to dereference a pointer.
+
+References can be automatically inferred to pointers, but not vice versa. There's also the `nullptr` keyword, which creates a pointer with a null reference.
+
+```
+i32 x = 5;
+*i32 y = &x;
+*i32 z = nullptr;
 ```
 
 ### Array types
