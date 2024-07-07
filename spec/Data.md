@@ -72,7 +72,7 @@ There's function types, which are defined similarly to Rust function types, but 
 Since function sizes are unknown, they need to be reference types.
 
 ```
-let f: ref func (i32, i32) i32 = Multiply; 
+let f: ref func(i32, i32) i32 = Multiply; 
 ```
 
 ## User-defined
@@ -104,3 +104,10 @@ enum SomeEnum: u32 {
 ```
 
 We do not have tuples, because I believe them to be an antipatterm. Having anyonymous data types with unnamed fields often leads to confusion. Use anonymous structs instead.
+
+## Syntax sugar for language builtin non-primitives
+
+- `?T` -> `Option<T>`
+- `..T` -> `Range<T>`
+    - `Range` is a trait, so must be a reference (`ref ..i32`)
+- `!(TErr) TOk` -> `Result<TOk, TErr>`
