@@ -36,10 +36,12 @@ Functions can have attributes.
 
 ```
 [name]
-func DoSomething() => unit;
+func DoSomething()
+    => unit;
 
 [name(values...)]
-func DoSomethingElse() => unit;
+func DoSomethingElse()
+    => unit;
 ```
 
 Read more about attributes in [Attributes](Attributes.md).
