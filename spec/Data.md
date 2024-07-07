@@ -110,6 +110,3 @@ We do not have tuples, because I believe them to be an antipatterm. Having anyon
 - `?T` -> `Option<T>`
 - `..T` -> `Range<T>`
     - `Range` is a trait, so must be a reference (`ref ..i32`)
-- `!(TErr) TOk` -> `Result<TOk, TErr>`
-    - `func ReadToString(fileName: string): !(IoError) string;`
-    - This is not recommended outside of simple return types.
