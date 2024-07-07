@@ -8,7 +8,6 @@ Here are a couple code examples that may or may not work
 where
   T : Compare
 func BubbleSort(arr: ref mut [T]) {
-
     for i in 0..(arr.Size - 1) {
         mut swapped = false;
         for j in 0..(arr.Size - i - 1) {
