@@ -30,6 +30,14 @@ This can be beneficial for traits, generics with specific implementations, or fo
 func DoSomething();
 ```
 
+`const` functions are pure functions. That means they aren't allowed I/O, they aren't allowed to allocate on the heap, they aren't allowed to call non-const functions, they aren't allowed to use pointers, they aren't allowed to access or mutate outside state, and they aren't allowed to call foreign functions.
+
+```
+const func DoSomething(x: i32): i32 {
+    return x * 2;
+}
+```
+
 ## Attributes
 
 Functions can have attributes.
