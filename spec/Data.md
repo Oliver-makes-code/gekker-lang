@@ -111,3 +111,4 @@ We do not have tuples, because I believe them to be an antipatterm. Having anyon
 - `..T` -> `Range<T>`
     - `Range` is a trait, so must be a reference (`ref ..i32`)
 - `!(TErr) TOk` -> `Result<TOk, TErr>`
+- `string` -> `String`
