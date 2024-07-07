@@ -28,12 +28,12 @@ If you want to be able to edit the referenced variable, you can use `ref mut`, w
 You take references to variables with `ref`, and if the type being referenced is mutable, the reference is automatically assumed to be mutable, downcasting if necessary.
 
 ```
-i32 nonRefX
-ref i32 x = &nonRefX;
+let nonRefX: i32;
+let x: ref i32 = &nonRefX;
 
-mut i32 nonRefY;
-ref mut i32 y = ref nonRefY;
-ref i32 yNonMut = ref nonRefY;
+let nonRefY: mut i32;
+let y: ref mut i32 = ref nonRefY;
+let yNonMut: ref i32 = ref nonRefY;
 ```
 
 ### Pointers
@@ -45,9 +45,9 @@ Pointers use a C-style syntax, declaring them with the `*` symbol, and using `->
 References can be automatically inferred to pointers, but not vice versa. There's also the `nullptr` keyword, which creates a pointer with a null reference.
 
 ```
-i32 x = 5;
-*i32 y = &x;
-*i32 z = nullptr;
+let x: i32 = 5;
+let y: *i32 = &x;
+let z: *i32 = nullptr;
 ```
 
 ### Array types
@@ -60,21 +60,19 @@ If you want to restrict the array to a certain size, you can use that by includi
 Because non-sized arrays have an unknown size, they always need to be references.
 
 ```
-[i32, 16] sixteenInts;
+let sixteenInts: [i32, 16];
 
-ref [i32] someIntArr = ref sixteenInts;
+let someIntArr: ref [i32] = ref sixteenInts;
 ```
 
 ### Function types
 
-There's function types, which are defined similarly (yet slightly differently) to C function types.
-
-C function types use the syntax `ReturnType (*name)(parameters)`, while we use `ReturnType(parameters)`.
+There's function types, which are defined similarly to Rust function types, but are a bit different.
 
 Since function sizes are unknown, they need to be reference types.
 
 ```
-ref int(int, int) f = Multiply; 
+let f: ref func (i32, i32) i32 = Multiply; 
 ```
 
 ## User-defined
@@ -85,20 +83,20 @@ We have Structs (product types) and Enums (sum types). That's it.
 
 ```
 struct Vec2 {
-    i32 x,
-    i32 y
+    x: i32,
+    y: i32
 }
 
 enum IntOrFloat {
-    Int = i32,
-    Float = f32
+    Int: i32,
+    Float: f32
 }
 ```
 
-Enums can also be used for integral types
+Enums can also be used for integral types. You need to explicitly declare them as such.
 
 ```
-enum u32 SomeEnum {
+enum SomeEnum: u32 {
     Item1,
     Item2,
     Item3 = 5
