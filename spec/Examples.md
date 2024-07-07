@@ -12,9 +12,7 @@ func BubbleSort(arr: ref mut [T]) {
         mut swapped = false;
         for j in 0..(arr.Size - i - 1) {
             if arr[j] > arr[j+1] {
-                let tmp = arr[j];
-                arr[j] = arr[j+1];
-                arr[j+1] = tmp;
+                [arr[j], arr[j+1]] = [arr[j+1], arr[j]];
                 swapped = true;
             }
         }
