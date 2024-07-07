@@ -72,4 +72,10 @@ We have a number of builtin function attributes.
     func RenderCube() {
         //...
     }
+
+    // Creates the symbol `void Exit()`
+    [Extern(C)]
+    func Exit(): never {
+        //...
+    }
     ```
