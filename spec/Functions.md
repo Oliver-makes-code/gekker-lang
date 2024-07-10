@@ -32,6 +32,8 @@ func DoSomething();
 
 `const` functions are pure functions. That means they aren't allowed I/O, they aren't allowed to allocate on the heap, they aren't allowed to call non-const functions, they aren't allowed to use pointers, they aren't allowed to access or mutate outside state, and they aren't allowed to call foreign functions.
 
+However, they can modify data from `ref mut`s.
+
 ```
 const func DoSomething(x: i32): i32 {
     return x * 2;
