@@ -43,3 +43,7 @@ This also works for specific symbols in the package
 ```
 using Std::Random::Next = NextRand;
 ```
+
+The root namespace of your package is always the name of your package.
+So a package named `Json` would have it's root namespace be `Json`.
+It is implicitly defined, so you don't need to do `namespace Json::Whatever`, only `namespace Whatever`
