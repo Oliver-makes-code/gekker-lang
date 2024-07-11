@@ -41,6 +41,7 @@ Here's a list of operator traits and their signatures
 - `& <TLhs, TRhs>` -> `BitAnd(lhs: TLhs, rhs: TRhs): This`
 - `| <TLhs, TRhs>` -> `BitOr(lhs: TLhs, rhs: TRhs): This`
 - `^ <TLhs, TRhs>` -> `BitXor(lhs: TLhs, rhs: TRhs): This`
+- `~ <TLhs, TRhs>` -> `BitNot(lhs: TLhs, rhs: TRhs): This`
 - `>= <TLhs, TRhs>` -> `GreaterEqual(lhs: TLhs, rhs: TRhs): This`
     - Can only be implemented on `bool` type.
 - `<= <TLhs, TRhs>` -> `LessEqual(lhs: TLhs, rhs: TRhs): This`

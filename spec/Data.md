@@ -5,7 +5,7 @@
 ### Integral types
 
 For primitive number types, we follow Rust's semantics, `u` denotes an unsigned integer, `i` denotes a signed integer, `f` denotes a float, and the following number is the bit count.
-An `f32` would be a 32-bit float, a `u128` would be a 128 bit unsigned integer, etc.
+An `f32` would be a 32-bit float, a `u64` would be a 64 bit unsigned integer, etc.
 
 We also have `bool` and `char`, where `bool` is a boolean, and `char` is a utf8 code point (32 bits, to store any utf8 scalar value). A c string would be an array of `u8`s
 
@@ -48,6 +48,12 @@ References can be automatically inferred to pointers, but not vice versa. There'
 let x: i32 = 5;
 let y: *i32 = &x;
 let z: *i32 = nullptr;
+```
+
+If you want to access a field if a pointer, you can use the `->` operator
+
+```
+ptr->x
 ```
 
 ### Array types
