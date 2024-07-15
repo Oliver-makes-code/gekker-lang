@@ -4,28 +4,38 @@
 
 ### Integral types
 
-For primitive number types, we follow Rust's semantics, `u` denotes an unsigned integer, `i` denotes a signed integer, `f` denotes a float, and the following number is the bit count.
-An `f32` would be a 32-bit float, a `u64` would be a 64 bit unsigned integer, etc.
+For primitive number types, we follow Rust's semantics, `u` denotes an unsigned
+integer, `i` denotes a signed integer, `f` denotes a float, and the following
+number is the bit count. An `f32` would be a 32-bit float, a `u64` would be a 64
+bit unsigned integer, etc.
 
-We also have `bool` and `char`, where `bool` is a boolean, and `char` is a utf8 code point (32 bits, to store any utf8 scalar value). A c string would be an array of `u8`s
+We also have `bool` and `char`, where `bool` is a boolean, and `char` is a utf8
+code point (32 bits, to store any utf8 scalar value). A c string would be an
+array of `u8`s
 
 ### Unit and Never
 
-There's `unit`, the top type, and `never`, the bottom type. 
+There's `unit`, the top type, and `never`, the bottom type.
 
-`unit` has one possible value, and `never` has no possible values.  This is an important distinction that we will cover later on.
+`unit` has one possible value, and `never` has no possible values. This is an
+important distinction that we will cover later on.
 
-`unit` can be thought of as similar to `void` in C, though, it is not 100% analogous. You can instantiate `unit` with the `unit` keyword
+`unit` can be thought of as similar to `void` in C, though, it is not 100%
+analogous. You can instantiate `unit` with the `unit` keyword
 
 ### Reference Types
 
-There's reference types, which store a reference to a variable. You can denote that with the `ref` keyword. References are always non-null.
+There's reference types, which store a reference to a variable. You can denote
+that with the `ref` keyword. References are always non-null.
 
 References can be used to give a function a variable, without passing ownership.
 
-If you want to be able to edit the referenced variable, you can use `ref mut`, which denotes a reference to a mutable variable
+If you want to be able to edit the referenced variable, you can use `ref mut`,
+which denotes a reference to a mutable variable
 
-You take references to variables with `ref`, and if the type being referenced is mutable, the reference is automatically assumed to be mutable, downcasting if necessary.
+You take references to variables with `ref`, and if the type being referenced is
+mutable, the reference is automatically assumed to be mutable, downcasting if
+necessary.
 
 ```
 let nonRefX: i32;
@@ -38,11 +48,17 @@ let yNonMut: ref i32 = ref nonRefY;
 
 ### Pointers
 
-Pointers are a lot like references, but without a lot of the compile-time checks that come with references. Pointers can access arbitrary places in memory, potentially causing unsafe behaviour. As such use of pointers is discouraged.
+Pointers are a lot like references, but without a lot of the compile-time checks
+that come with references. Pointers can access arbitrary places in memory,
+potentially causing unsafe behaviour. As such use of pointers is discouraged.
 
-Pointers use a C-style syntax, declaring them with the `*` symbol, and using `->` to access members. Unlike C, the `*` symbol goes before the type name. You use `&` to reference a variable, and use `*` as well to dereference a pointer.
+Pointers use a C-style syntax, declaring them with the `*` symbol, and using
+`->` to access members. Unlike C, the `*` symbol goes before the type name. You
+use `&` to reference a variable, and use `*` as well to dereference a pointer.
 
-References can be automatically inferred to pointers, but not vice versa. There's also the `nullptr` keyword, which creates a pointer with a null reference.
+References can be automatically inferred to pointers, but not vice versa.
+There's also the `nullptr` keyword, which creates a pointer with a null
+reference.
 
 ```
 let x: i32 = 5;
@@ -58,12 +74,14 @@ ptr->x
 
 ### Array types
 
-There's arrays, which are a sequential layout of the same data type.
-They are denoted by a `[]` containing the type name.
+There's arrays, which are a sequential layout of the same data type. They are
+denoted by a `[]` containing the type name.
 
-If you want to restrict the array to a certain size, you can use that by including the size after the type, separated by a comma.
+If you want to restrict the array to a certain size, you can use that by
+including the size after the type, separated by a comma.
 
-Because non-sized arrays have an unknown size, they always need to be references.
+Because non-sized arrays have an unknown size, they always need to be
+references.
 
 ```
 let sixteenInts: [i32, 16];
@@ -73,12 +91,13 @@ let someIntArr: ref [i32] = ref sixteenInts;
 
 ### Function types
 
-There's function types, which are defined similarly to Rust function types, but are a bit different.
+There's function types, which are defined similarly to Rust function types, but
+are a bit different.
 
 Since function sizes are unknown, they need to be reference types.
 
 ```
-let f: ref func(i32, i32) i32 = Multiply; 
+let f: ref func(i32, i32) i32 = Multiply;
 ```
 
 ## User-defined
@@ -99,7 +118,8 @@ enum IntOrFloat {
 }
 ```
 
-Enums can also be used for integral types. You need to explicitly declare them as such.
+Enums can also be used for integral types. You need to explicitly declare them
+as such.
 
 ```
 enum SomeEnum: u32 {
@@ -109,10 +129,12 @@ enum SomeEnum: u32 {
 }
 ```
 
-We do not have tuples, because I believe them to be an antipatterm. Having anyonymous data types with unnamed fields often leads to confusion. Use anonymous structs instead.
+We do not have tuples, because I believe them to be an antipatterm. Having
+anyonymous data types with unnamed fields often leads to confusion. Use
+anonymous structs instead.
 
 ## Syntax sugar for language builtin non-primitives
 
 - `?T` -> `Option<T>`
 - `..T` -> `Range<T>`
-    - `Range` is a trait, so must be a reference (`ref ..i32`)
+  - `Range` is a trait, so must be a reference (`ref ..i32`)
