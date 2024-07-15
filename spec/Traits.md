@@ -64,23 +64,25 @@ Here's a list of operator traits and their signatures
 
 Some other special-case operators
 
-```
-where
-    TItem
-trait operator .. {
-    func Range(pair: Pair<TItem, TItem>): This;
-    func Next(ref mut this): ?TItem;
-    func Current(ref this): TItem;
-    func Min(ref this): TItem;
-    func Max(ref this): TItem;
-}
-
-where
-    TItem,
-    TRange : operator ..<TItem>
-impl Into<TRange> for Pair<TItem, TItem> {
-    func Into(this): TRange {
-        return TRange::Range(this);
+- `..`
+    ```
+    where
+        TItem
+    trait operator .. {
+        const func Range(pair: Pair<TItem, TItem>): This;
+        const func Next(ref mut this): ?TItem;
+        const func Current(ref this): TItem;
+        const func Min(ref this): TItem;
+        const func Max(ref this): TItem;
     }
-}
-```
+
+    // Automtaically implements
+    where
+        TItem,
+        TRange : operator ..<TItem>
+    impl Into<TRange> for Pair<TItem, TItem> {
+        const func Into(this): TRange {
+            return TRange::Range(this);
+        }
+    }
+    ```
