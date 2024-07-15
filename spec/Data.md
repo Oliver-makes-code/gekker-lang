@@ -137,4 +137,4 @@ anonymous structs instead.
 
 - `?T` -> `Option<T>`
 - `..T` -> `Range<T>`
-  - `Range` is a trait, so must be a reference (`ref ..i32`)
+    - `Range` is a trait, so must be a reference (`ref ..i32`)
