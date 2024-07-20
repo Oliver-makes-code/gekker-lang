@@ -77,7 +77,7 @@ We have a number of builtin function attributes.
 
     // Looks for symbol `void glClearColor(float, float, float, float)`
     [Extern(C, symbol="glClearColor")]
-    func Gl.ClearColor(r: f32, g: f32, b: f32, a: f32);
+    func ClearColor(r: f32, g: f32, b: f32, a: f32);
 
     // Creates the symbol `uint32_t GetRandomChar()`
     [Extern(C)]
