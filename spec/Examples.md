@@ -20,3 +20,16 @@ func BubbleSort(arr: ref mut [T]) {
     }
 }
 ```
+
+```
+[Flags]
+enum WindowFlags : u32 {
+    Fullscreen = 0x00000001,
+    OpenGl     = 0x00000002,
+    Shown      = 0x00000004,
+    Hidden     = 0x00000008,
+    Borderless = 0x00000010,
+    Resizable  = 0x00000020,
+    //...
+}
+```

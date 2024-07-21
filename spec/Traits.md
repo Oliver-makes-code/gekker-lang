@@ -39,7 +39,7 @@ Here's a list of operator traits and their signatures
 - `- <TLhs, TRhs>` -> `Sub(lhs: TLhs, rhs: TRhs): This`
 - `* <TLhs, TRhs>` -> `Mul(lhs: TLhs, rhs: TRhs): This`
 - `/ <TLhs, TRhs>` -> `Div(lhs: TLhs, rhs: TRhs): This`
-- `% <TLhs, TRhs>` -> `Mod(lhs: TLhs, rhs: TRhs): This`
+- `% <TLhs, TRhs>` -> `Rem(lhs: TLhs, rhs: TRhs): This`
 - `> <TLhs, TRhs>` -> `Greater(lhs: TLhs, rhs: TRhs): This`
 - `< <TLhs, TRhs>` -> `Less(lhs: TLhs, rhs: TRhs): This`
 - `& <TLhs, TRhs>` -> `BitAnd(lhs: TLhs, rhs: TRhs): This`
