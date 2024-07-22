@@ -60,7 +60,7 @@ Here's a list of operator traits and their signatures
     - Can only be implemented on `bool` type.
 - `^^ <TLhs, TRhs>` -> `BoolXor(lhs: TLhs, rhs: TRhs): This`
     - Can only be implemented on `bool` type.
-- `! <TValue>` -> `Not(value: TValue): This`
+- `! <TValue>` -> `BoolNot(value: TValue): This`
 - `+ <TValue>` -> `UnaryPlus(value: TValue): This`
 - `- <TValue>` -> `UnaryMinus(value: TValue): This`
 - `=` -> `Copy(ref this, other: ref mut This)`
