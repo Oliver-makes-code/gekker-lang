@@ -74,8 +74,11 @@ pub enum Keyword {
     Else,
     Match,
     In,
+
     Break,
     Return,
+    Goto,
+    Label,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -210,8 +213,11 @@ impl Keyword {
             "else" => Self::Else,
             "match" => Self::Match,
             "in" => Self::In,
+
             "break" => Self::Break,
             "return" => Self::Return,
+            "label" => Self::Label,
+            "goto" => Self::Goto,
             _ => return None,
         });
     }
