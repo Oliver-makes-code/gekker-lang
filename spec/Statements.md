@@ -53,3 +53,97 @@ loop {
     //...
 }
 ```
+
+## Return
+
+We have basic return statements, like you're used to
+
+```
+return;
+
+return value;
+```
+
+We also have `return if`, to easily create guard clauses.
+
+```
+return if someBool;
+
+return Err(SomeErr) if someBool;
+```
+
+## Break / labels / goto
+
+We also have break labels, and goto.
+
+```
+label x;
+
+goto x;
+
+label y {
+    // Block for the label
+
+    // Breaks out of y
+    break y;
+}
+
+label z {
+    break z if someBool;
+
+    Print(":3");
+}
+```
+
+## Match
+
+There's a couple forms of pattern matching.
+
+First of all, there's the base `match` statement, which acts like a switch statement
+
+```
+match thing {
+    1 | 2 => {
+        Print("yippee");
+    }
+    _ => {
+        Print("Awww");
+    }
+}
+```
+
+Note, the `_` (discard) keyword acts as the "else" case. 
+You can also use an identifier to assign it to a variable. For example
+
+```
+match thing {
+    Ok(1 | 2) => Print("yippee"),
+    Ok(value) => Print(value),
+    Err(_) => Print("Error!"),
+}
+```
+
+There's also `if match` and `match else`
+
+```
+// If match
+
+if match Err(thing) => value {
+    Print("Error! {}", thing);
+    return;
+}
+
+// Match else
+
+match Ok(thing) => value else {
+    Print("Error!");
+    return;
+}
+Print("{}", thing);
+```
+
+`return if` also works with this
+
+```
+return err if match Err(err) => value;
+```
