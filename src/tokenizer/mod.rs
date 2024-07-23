@@ -52,15 +52,20 @@ impl<'a> Tokenizer<'a> {
                 self.parser.checkout();
                 self.parser.next();
 
-                if let Some(decimal_slice) = self.parser.while_func(char::is_numeric) {
-                    let decimal = decimal_slice.value().parse().unwrap();
-                    self.parser.commit()?;
+                if let Some(_) = self.parser.while_func(char::is_numeric) {
+                    let decimal = self.parser.commit()?.value().parse().unwrap();
                     return Some((self.parser.commit()?, Number { whole, decimal }));
                 }
                 self.parser.rollback();
             }
 
-            return Some((self.parser.commit()?, Number { whole, decimal: 0 }));
+            return Some((
+                self.parser.commit()?,
+                Number {
+                    whole,
+                    decimal: 0.0,
+                },
+            ));
         }
 
         self.parser.rollback();

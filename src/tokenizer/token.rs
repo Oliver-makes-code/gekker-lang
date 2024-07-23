@@ -1,12 +1,12 @@
 use crate::string::{parser::StringParser, StringSlice};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Token<'a> {
     pub slice: Option<StringSlice<'a>>,
     pub kind: TokenKind<'a>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TokenKind<'a> {
     Identifier(&'a str),
     String(String),
@@ -17,10 +17,10 @@ pub enum TokenKind<'a> {
     Eof,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Number {
     pub whole: u64,
-    pub decimal: u64,
+    pub decimal: f64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -137,6 +137,18 @@ pub enum Symbol {
     Equal,        // ==
     NotEqual,     // !=
 
+    // Range
+    Range,       // ..
+    RangeTo,     // ..=
+    RangeFrom,   // <..
+    RangeFromTo, // <..=
+
+    // Shift
+    Shl,       // <<
+    ShlAssign, // <<=
+    Shr,       // >>
+    ShrAssign, // >>=
+
     // Other symbols
     BoolNot,     // !
     Colon,       // :
@@ -144,11 +156,6 @@ pub enum Symbol {
     Assign,      // =
     Optional,    // ?
     Dot,         // .
-    Range,       // ..
-    RangeTo,     // ..=
-    RangeFrom,   // <..
-    RangeFromTo, // <..=
-    Expand,      // ...
     Comma,       // ,
     WideArrow,   // =>
     SmallArrow,  // ->
@@ -213,7 +220,6 @@ impl Keyword {
 impl Symbol {
     pub fn from<'a>(parser: &mut StringParser<'a>) -> Option<(StringSlice<'a>, Self)> {
         symbol_match!(parser,
-            "..." => Self::Expand,
             "<..=" => Self::RangeFromTo,
             "..=" => Self::RangeTo,
             "<.." => Self::RangeFrom,
@@ -229,6 +235,11 @@ impl Symbol {
             "!" => Self::BoolNot,
             "," => Self::Comma,
             ";" => Self::Semicolon,
+
+            "<<=" => Self::ShlAssign,
+            "<<" => Self::Shl,
+            ">>=" => Self::ShrAssign,
+            ">>" => Self::Shr,
 
             ">=" => Self::GreaterEqual,
             ">" => Self::Greater,

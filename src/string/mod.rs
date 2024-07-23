@@ -14,7 +14,7 @@ impl<'a> StringSlice<'a> {
         return &self.src[self.start..self.end];
     }
 
-    pub fn merge(&self, other: &Self) -> Self {
+    pub fn merge(self, other: Self) -> Self {
         let start = usize::min(self.start, other.start);
         let end = usize::max(self.end, other.end);
         return Self {
