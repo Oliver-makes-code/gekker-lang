@@ -93,6 +93,17 @@ label z {
 
     Print(":3");
 }
+
+label a {
+    label b {
+        label c {
+            // Breaks out of c
+            break;
+        }
+        // Breaks out of a and b
+        break a;
+    }
+}
 ```
 
 ## Match
