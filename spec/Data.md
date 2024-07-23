@@ -138,3 +138,19 @@ anonymous structs instead.
 - `?T` -> `Option<T>`
 - `..T` -> `Range<T>`
     - `Range` is a trait, so must be a reference (`ref ..i32`)
+
+## Casting
+
+We don't have an `as` keyword like some languages do, instead we use `:`.
+
+This is done so you can have the following
+
+```
+thing:Type.x
+```
+
+Since you can't have a type contain a type, this is unambiguous.
+
+```
+thing:module::Type
+```

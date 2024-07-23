@@ -110,7 +110,7 @@ pub fn parse_access_arm<'a>(
 }
 
 pub fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Expr<'a>, ParserError<'a>> {
-    let token = tokenizer.next()?;
+    let token = tokenizer.peek()?;
 
     let Some(slice) = token.slice else {
         return Err(ParserError::UnexpectedEof);
@@ -120,6 +120,8 @@ pub fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Expr<'a>, ParserE
         TokenKind::Identifier(ident) => {
             let mut slice = slice;
             let mut idents = vec![ident];
+
+            tokenizer.next()?;
 
             while let TokenKind::Symbol(Symbol::DoubleColon) = tokenizer.peek()?.kind {
                 tokenizer.next()?;
@@ -143,6 +145,8 @@ pub fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Expr<'a>, ParserE
         TokenKind::Keyword(Keyword::True) => ExprKind::Bool(true),
         TokenKind::Keyword(Keyword::False) => ExprKind::Bool(false),
         TokenKind::Symbol(Symbol::ParenOpen) => {
+            tokenizer.next()?;
+
             let expr = parse_root(tokenizer)?;
 
             let next = tokenizer.next()?;
@@ -160,6 +164,8 @@ pub fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Expr<'a>, ParserE
             return Err(ParserError::UnexpectedToken(token, "Value"));
         }
     };
+
+    tokenizer.next()?;
 
     return Ok(Expr { slice, kind });
 }

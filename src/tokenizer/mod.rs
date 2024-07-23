@@ -271,17 +271,18 @@ impl<'a> Tokenizer<'a> {
         return Err(TokenizeError::UnexpectedEof);
     }
 
-    fn skip_ignores(&mut self) -> Result<(), TokenizeError> {
+    fn skip_ignores(&mut self) -> Result<(), TokenizeError<'a>> {
         loop {
             let mut exit = true;
             if self.parser.while_func(char::is_whitespace).is_some() {
                 exit = false;
             }
+
             if self.parser.try_consume_str("//").is_some() {
                 self.parser.while_func(|it| it != '\n');
                 exit = false;
             }
-            self.parser.checkout();
+            
             if self.parser.try_consume_str("/*").is_some() {
                 while self.parser.try_consume_str("*/").is_none() {
                     if self.parser.curr().is_none() {
@@ -291,7 +292,7 @@ impl<'a> Tokenizer<'a> {
                 }
                 exit = false
             }
-            self.parser.commit();
+            
             if self.parser.curr().is_none() || exit {
                 break;
             }
@@ -315,7 +316,7 @@ impl<'a> Tokenizer<'a> {
             return Ok(peek);
         }
         
-        self.skip_ignores();
+        self.skip_ignores()?;
 
         if let None = self.parser.curr() {
             return Ok(Token {
