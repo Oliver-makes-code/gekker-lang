@@ -1,5 +1,5 @@
 use crate::{
-    ast::{AccessKind, BinOp, Expr, ExprKind, UnaryOp},
+    ast::expr::{AccessKind, BinOp, Expr, ExprKind, UnaryOp},
     tokenizer::{
         token::{Keyword, Symbol, TokenKind},
         Tokenizer,
@@ -68,7 +68,10 @@ pub fn parse_access<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Expr<'a>, Parse
     return Ok(expr);
 }
 
-pub fn parse_access_arm<'a>(tokenizer: &mut Tokenizer<'a>, expr: Expr<'a>) -> Result<Option<Expr<'a>>, ParserError<'a>> {
+pub fn parse_access_arm<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+    expr: Expr<'a>,
+) -> Result<Option<Expr<'a>>, ParserError<'a>> {
     if let Some((_, kind)) = AccessKind::try_parse(tokenizer)? {
         tokenizer.next()?;
         let next = tokenizer.next()?;
@@ -79,8 +82,8 @@ pub fn parse_access_arm<'a>(tokenizer: &mut Tokenizer<'a>, expr: Expr<'a>) -> Re
 
         return Ok(Some(Expr {
             slice: expr.slice.merge(next.slice.unwrap()),
-            kind: ExprKind::Field(Box::new(expr), kind, ident)
-        }))
+            kind: ExprKind::Field(Box::new(expr), kind, ident),
+        }));
     }
 
     let next = tokenizer.peek()?;
@@ -102,7 +105,7 @@ pub fn parse_access_arm<'a>(tokenizer: &mut Tokenizer<'a>, expr: Expr<'a>) -> Re
 
     return Ok(Some(Expr {
         slice: expr.slice.merge(slice),
-        kind: ExprKind::Index(Box::new(expr), Box::new(index))
+        kind: ExprKind::Index(Box::new(expr), Box::new(index)),
     }));
 }
 
@@ -154,10 +157,7 @@ pub fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Expr<'a>, ParserE
             });
         }
         _ => {
-            return Err(ParserError::UnexpectedToken(
-                token,
-                "Value",
-            ));
+            return Err(ParserError::UnexpectedToken(token, "Value"));
         }
     };
 
