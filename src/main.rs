@@ -2,7 +2,7 @@
 
 use ast::parse::{
     error::ParserError,
-    expr::{self},
+    expr::{self}, statement,
 };
 use tokenizer::{token, Tokenizer};
 
@@ -15,7 +15,7 @@ const STR: &'static str = include_str!("test.txt");
 fn main() -> Result<(), ParserError<'static>> {
     let mut tokenizer = Tokenizer::new(STR);
 
-    println!("{:#?}", expr::parse_root(&mut tokenizer)?);
+    statement::parse_root(&mut tokenizer)?;
 
     Ok(())
 }

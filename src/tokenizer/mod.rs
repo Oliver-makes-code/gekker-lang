@@ -26,7 +26,7 @@ pub enum TokenizeError<'a> {
 
 pub struct Tokenizer<'a> {
     parser: StringParser<'a>,
-    peek: VecDeque<Result<Token<'a>, TokenizeError<'a>>>,
+    peek: VecDeque<Token<'a>>,
 }
 
 impl<'a> Tokenizer<'a> {
@@ -304,26 +304,20 @@ impl<'a> Tokenizer<'a> {
 
     pub fn peek(&mut self, n: usize) -> Result<Token<'a>, TokenizeError<'a>> {
         if let Some(token) = self.peek.get(n) {
-            return token.clone();
-        }
-        if let Some(back) = self.peek.back() && back.is_err() {
-            return back.clone();
-        }
-        while n >= self.peek.len() {
-            let next = self.next_raw();
-            self.peek.push_back(next.clone());
-            next?;
+            return Ok(token.clone());
         }
 
-        return self.peek.get(n).unwrap().clone();
+        while n >= self.peek.len() {
+            let next = self.next_raw()?;
+            self.peek.push_back(next.clone());
+        }
+
+        return Ok(self.peek.get(n).unwrap().clone());
     }
 
     pub fn next(&mut self) -> Result<Token<'a>, TokenizeError<'a>> {
         if let Some(peek) = self.peek.pop_front() {
-            if peek.is_err() {
-                self.peek.push_front(peek.clone());
-            }
-            return peek;
+            return Ok(peek);
         }
 
         return self.next_raw();

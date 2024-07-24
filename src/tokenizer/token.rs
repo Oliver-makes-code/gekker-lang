@@ -170,7 +170,7 @@ impl Keyword {
         return Some(match s {
             "let" => Self::Let,
             "mut" => Self::Mut,
-            "sonst" => Self::Const,
+            "const" => Self::Const,
             "static" => Self::Static,
             "func" => Self::Func,
             "pub" => Self::Pub,
