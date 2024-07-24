@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use token::{Keyword, Number, Symbol, Token, TokenKind};
 
 use crate::string::{parser::StringParser, StringSlice};
@@ -24,14 +26,14 @@ pub enum TokenizeError<'a> {
 
 pub struct Tokenizer<'a> {
     parser: StringParser<'a>,
-    peek: Result<Option<Token<'a>>, TokenizeError<'a>>,
+    peek: VecDeque<Result<Token<'a>, TokenizeError<'a>>>,
 }
 
 impl<'a> Tokenizer<'a> {
     pub fn new(src: &'a str) -> Self {
         return Self {
             parser: StringParser::new(src),
-            peek: Ok(None),
+            peek: VecDeque::new(),
         };
     }
 
@@ -300,22 +302,34 @@ impl<'a> Tokenizer<'a> {
         return Ok(());
     }
 
-    pub fn peek(&mut self) -> Result<Token<'a>, TokenizeError<'a>> {
-        let peek = self.peek.clone()?;
-        if let Some(peek) = peek {
-            return Ok(peek);
+    pub fn peek(&mut self, n: usize) -> Result<Token<'a>, TokenizeError<'a>> {
+        if let Some(token) = self.peek.get(n) {
+            return token.clone();
         }
-        let token = self.next()?;
-        self.peek = Ok(Some(token.clone()));
-        return Ok(token);
+        if let Some(back) = self.peek.back() && back.is_err() {
+            return back.clone();
+        }
+        while n >= self.peek.len() {
+            let next = self.next_raw();
+            self.peek.push_back(next.clone());
+            next?;
+        }
+
+        return self.peek.get(n).unwrap().clone();
     }
 
     pub fn next(&mut self) -> Result<Token<'a>, TokenizeError<'a>> {
-        if let Some(peek) = self.peek.clone()? {
-            self.peek = Ok(None);
-            return Ok(peek);
+        if let Some(peek) = self.peek.pop_front() {
+            if peek.is_err() {
+                self.peek.push_front(peek.clone());
+            }
+            return peek;
         }
 
+        return self.next_raw();
+    }
+
+    fn next_raw(&mut self) -> Result<Token<'a>, TokenizeError<'a>> {
         self.skip_ignores()?;
 
         if let None = self.parser.curr() {

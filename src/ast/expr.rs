@@ -84,7 +84,7 @@ impl AccessKind {
     pub fn try_parse<'a>(
         tokenizer: &mut Tokenizer<'a>,
     ) -> Result<Option<(StringSlice<'a>, Self)>, ParserError<'a>> {
-        let peek = tokenizer.peek()?;
+        let peek = tokenizer.peek(0)?;
 
         let kind = match peek.kind {
             TokenKind::Symbol(Symbol::Dot) => Self::Value,
@@ -100,7 +100,7 @@ impl UnaryOp {
     pub fn try_parse<'a>(
         tokenizer: &mut Tokenizer<'a>,
     ) -> Result<Option<(StringSlice<'a>, Self)>, ParserError<'a>> {
-        let peek = tokenizer.peek()?;
+        let peek = tokenizer.peek(0)?;
 
         let op = match peek.kind {
             TokenKind::Symbol(Symbol::Add) => Self::Add,
@@ -148,7 +148,7 @@ impl BinOp {
     pub fn try_parse<'a>(
         tokenizer: &mut Tokenizer<'a>,
     ) -> Result<Option<(StringSlice<'a>, Self)>, ParserError<'a>> {
-        let peek = tokenizer.peek()?;
+        let peek = tokenizer.peek(0)?;
 
         let op = match peek.kind {
             TokenKind::Symbol(Symbol::Add) => Self::Add,

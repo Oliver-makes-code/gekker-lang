@@ -30,7 +30,7 @@ pub fn parse_operators<'a>(
 
         let Some(rhs) = parse_operators(tokenizer, rhs_binding)? else {
             return Err(ParserError::UnexpectedToken(
-                tokenizer.peek()?,
+                tokenizer.peek(0)?,
                 "Expression",
             ));
         };
@@ -99,7 +99,7 @@ pub fn parse_access_arm<'a>(
         }));
     }
 
-    let next = tokenizer.peek()?;
+    let next = tokenizer.peek(0)?;
 
     let TokenKind::Symbol(Symbol::BracketOpen) = next.kind else {
         return Ok(None);
@@ -108,7 +108,7 @@ pub fn parse_access_arm<'a>(
 
     let Some(index) = parse_root(tokenizer)? else {
         return Err(ParserError::UnexpectedToken(
-            tokenizer.peek()?,
+            tokenizer.peek(0)?,
             "Expression",
         ));
     };
@@ -128,7 +128,7 @@ pub fn parse_access_arm<'a>(
 }
 
 pub fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Expr<'a>>, ParserError<'a>> {
-    let token = tokenizer.peek()?;
+    let token = tokenizer.peek(0)?;
 
     let Some(slice) = token.slice else {
         return Err(ParserError::UnexpectedEof);
@@ -141,7 +141,7 @@ pub fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Expr<'a>>,
 
             tokenizer.next()?;
 
-            while let TokenKind::Symbol(Symbol::DoubleColon) = tokenizer.peek()?.kind {
+            while let TokenKind::Symbol(Symbol::DoubleColon) = tokenizer.peek(0)?.kind {
                 tokenizer.next()?;
                 let next = tokenizer.next()?;
                 let TokenKind::Identifier(ident) = next.kind else {
@@ -167,7 +167,7 @@ pub fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Expr<'a>>,
 
             let Some(expr) = parse_root(tokenizer)? else {
                 return Err(ParserError::UnexpectedToken(
-                    tokenizer.peek()?,
+                    tokenizer.peek(0)?,
                     "Expression",
                 ));
             };

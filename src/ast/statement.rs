@@ -30,7 +30,7 @@ impl Mutability {
     pub fn try_parse_variable<'a>(
         tokenizer: &mut Tokenizer<'a>,
     ) -> Result<Option<(StringSlice<'a>, Self)>, ParserError<'a>> {
-        let peek = tokenizer.peek()?;
+        let peek = tokenizer.peek(0)?;
 
         let kind = match peek.kind {
             TokenKind::Keyword(Keyword::Let) => Self::Regular,

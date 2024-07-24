@@ -4,7 +4,7 @@ use ast::parse::{
     error::ParserError,
     expr::{self},
 };
-use tokenizer::Tokenizer;
+use tokenizer::{token, Tokenizer};
 
 pub mod ast;
 pub mod string;
