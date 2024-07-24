@@ -26,7 +26,7 @@ pub fn parse_operators<'a>(
         if lhs_binding < binding {
             break;
         }
-        tokenizer.next()?;
+        tokenizer.clear_peek_queue();
 
         let Some(rhs) = parse_operators(tokenizer, rhs_binding)? else {
             return Err(ParserError::UnexpectedToken(
@@ -48,7 +48,7 @@ pub fn parse_operators<'a>(
 pub fn parse_unary<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Expr<'a>>, ParserError<'a>> {
     let mut unary_ops = vec![];
     while let Some(op) = UnaryOp::try_parse(tokenizer)? {
-        tokenizer.next()?;
+        tokenizer.clear_peek_queue();
         unary_ops.push(op);
     }
 
@@ -57,7 +57,6 @@ pub fn parse_unary<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Expr<'a>>
     };
 
     while let Some((slice, op)) = unary_ops.pop() {
-        tokenizer.next()?;
         expr = Expr {
             slice: slice.merge(expr.slice),
             kind: ExprKind::UnaryOp(op, Box::new(expr)),
@@ -86,7 +85,7 @@ pub fn parse_access_arm<'a>(
     expr: Expr<'a>,
 ) -> Result<Option<Expr<'a>>, ParserError<'a>> {
     if let Some((_, kind)) = AccessKind::try_parse(tokenizer)? {
-        tokenizer.next()?;
+        tokenizer.clear_peek_queue();
         let next = tokenizer.next()?;
 
         let TokenKind::Identifier(ident) = next.kind else {
@@ -104,7 +103,7 @@ pub fn parse_access_arm<'a>(
     let TokenKind::Symbol(Symbol::BracketOpen) = next.kind else {
         return Ok(None);
     };
-    tokenizer.next()?;
+    tokenizer.clear_peek_queue();
 
     let Some(index) = parse_root(tokenizer)? else {
         return Err(ParserError::UnexpectedToken(
@@ -139,10 +138,10 @@ pub fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Expr<'a>>,
             let mut slice = slice;
             let mut idents = vec![ident];
 
-            tokenizer.next()?;
+            tokenizer.clear_peek_queue();
 
             while let TokenKind::Symbol(Symbol::DoubleColon) = tokenizer.peek(0)?.kind {
-                tokenizer.next()?;
+                tokenizer.clear_peek_queue();
                 let next = tokenizer.next()?;
                 let TokenKind::Identifier(ident) = next.kind else {
                     return Err(ParserError::UnexpectedToken(next, "Identifier"));
@@ -163,7 +162,7 @@ pub fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Expr<'a>>,
         TokenKind::Keyword(Keyword::True) => ExprKind::Bool(true),
         TokenKind::Keyword(Keyword::False) => ExprKind::Bool(false),
         TokenKind::Symbol(Symbol::ParenOpen) => {
-            tokenizer.next()?;
+            tokenizer.clear_peek_queue();
 
             let Some(expr) = parse_root(tokenizer)? else {
                 return Err(ParserError::UnexpectedToken(
@@ -188,7 +187,7 @@ pub fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Expr<'a>>,
         }
     };
 
-    tokenizer.next()?;
+    tokenizer.clear_peek_queue();
 
     return Ok(Some(Expr { slice, kind }));
 }

@@ -23,7 +23,6 @@ impl Decl {
                 let next = tokenizer.peek(1)?;
                 
                 if let TokenKind::Keyword(Keyword::Func) = next.kind {
-                    tokenizer.next()?;
                     return Ok(Some(Decl::ConstFunc));
                 }
                 

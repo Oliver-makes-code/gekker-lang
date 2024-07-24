@@ -2,9 +2,9 @@
 
 use ast::parse::{
     error::ParserError,
-    expr::{self}, statement,
+    expr::{self},
 };
-use tokenizer::{token, Tokenizer};
+use tokenizer::Tokenizer;
 
 pub mod ast;
 pub mod string;
@@ -15,7 +15,7 @@ const STR: &'static str = include_str!("test.txt");
 fn main() -> Result<(), ParserError<'static>> {
     let mut tokenizer = Tokenizer::new(STR);
 
-    statement::parse_root(&mut tokenizer)?;
+    println!("{:#?}", expr::parse_root(&mut tokenizer)?);
 
     Ok(())
 }
