@@ -8,7 +8,7 @@ use crate::{
 
 use super::error::ParserError;
 
-pub fn parse_root<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Expr<'a>, ParserError<'a>> {
+pub fn parse_root<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Expr<'a>>, ParserError<'a>> {
     return parse_operators(tokenizer, 0);
 }
 
@@ -16,8 +16,10 @@ pub fn parse_root<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Expr<'a>, ParserE
 pub fn parse_operators<'a>(
     tokenizer: &mut Tokenizer<'a>,
     binding: usize,
-) -> Result<Expr<'a>, ParserError<'a>> {
-    let mut expr = parse_unary(tokenizer)?;
+) -> Result<Option<Expr<'a>>, ParserError<'a>> {
+    let Some(mut expr) = parse_unary(tokenizer)? else {
+        return Ok(None);
+    };
 
     while let Some((_, op)) = BinOp::try_parse(tokenizer)? {
         let (lhs_binding, rhs_binding) = op.binding();
@@ -26,7 +28,12 @@ pub fn parse_operators<'a>(
         }
         tokenizer.next()?;
 
-        let rhs = parse_operators(tokenizer, rhs_binding)?;
+        let Some(rhs) = parse_operators(tokenizer, rhs_binding)? else {
+            return Err(ParserError::UnexpectedToken(
+                tokenizer.peek()?,
+                "Expression",
+            ));
+        };
         let slice = expr.slice.merge(rhs.slice);
 
         expr = Expr {
@@ -35,17 +42,19 @@ pub fn parse_operators<'a>(
         };
     }
 
-    return Ok(expr);
+    return Ok(Some(expr));
 }
 
-pub fn parse_unary<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Expr<'a>, ParserError<'a>> {
+pub fn parse_unary<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Expr<'a>>, ParserError<'a>> {
     let mut unary_ops = vec![];
     while let Some(op) = UnaryOp::try_parse(tokenizer)? {
         tokenizer.next()?;
         unary_ops.push(op);
     }
 
-    let mut expr = parse_access(tokenizer)?;
+    let Some(mut expr) = parse_access(tokenizer)? else {
+        return Ok(None);
+    };
 
     while let Some((slice, op)) = unary_ops.pop() {
         tokenizer.next()?;
@@ -55,17 +64,21 @@ pub fn parse_unary<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Expr<'a>, Parser
         };
     }
 
-    return Ok(expr);
+    return Ok(Some(expr));
 }
 
-pub fn parse_access<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Expr<'a>, ParserError<'a>> {
-    let mut expr = parse_atom(tokenizer)?;
+pub fn parse_access<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<Expr<'a>>, ParserError<'a>> {
+    let Some(mut expr) = parse_atom(tokenizer)? else {
+        return Ok(None);
+    };
 
     while let Some(access) = parse_access_arm(tokenizer, expr.clone())? {
         expr = access;
     }
 
-    return Ok(expr);
+    return Ok(Some(expr));
 }
 
 pub fn parse_access_arm<'a>(
@@ -93,7 +106,12 @@ pub fn parse_access_arm<'a>(
     };
     tokenizer.next()?;
 
-    let index = parse_root(tokenizer)?;
+    let Some(index) = parse_root(tokenizer)? else {
+        return Err(ParserError::UnexpectedToken(
+            tokenizer.peek()?,
+            "Expression",
+        ));
+    };
 
     let next = tokenizer.next()?;
 
@@ -109,7 +127,7 @@ pub fn parse_access_arm<'a>(
     }));
 }
 
-pub fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Expr<'a>, ParserError<'a>> {
+pub fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Expr<'a>>, ParserError<'a>> {
     let token = tokenizer.peek()?;
 
     let Some(slice) = token.slice else {
@@ -133,10 +151,10 @@ pub fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Expr<'a>, ParserE
                 slice = slice.merge(next.slice.unwrap());
             }
 
-            return Ok(Expr {
+            return Ok(Some(Expr {
                 slice,
                 kind: ExprKind::Identifier(idents),
-            });
+            }));
         }
         TokenKind::Char(c) => ExprKind::Char(c),
         TokenKind::Number(n) => ExprKind::Number(n),
@@ -147,7 +165,12 @@ pub fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Expr<'a>, ParserE
         TokenKind::Symbol(Symbol::ParenOpen) => {
             tokenizer.next()?;
 
-            let expr = parse_root(tokenizer)?;
+            let Some(expr) = parse_root(tokenizer)? else {
+                return Err(ParserError::UnexpectedToken(
+                    tokenizer.peek()?,
+                    "Expression",
+                ));
+            };
 
             let next = tokenizer.next()?;
 
@@ -155,17 +178,17 @@ pub fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Expr<'a>, ParserE
                 return Err(ParserError::UnexpectedToken(next, "ParenClose"));
             };
 
-            return Ok(Expr {
+            return Ok(Some(Expr {
                 slice: slice.merge(next.slice.unwrap()),
                 ..expr
-            });
+            }));
         }
         _ => {
-            return Err(ParserError::UnexpectedToken(token, "Value"));
+            return Ok(None);
         }
     };
 
     tokenizer.next()?;
 
-    return Ok(Expr { slice, kind });
+    return Ok(Some(Expr { slice, kind }));
 }

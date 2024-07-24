@@ -282,7 +282,7 @@ impl<'a> Tokenizer<'a> {
                 self.parser.while_func(|it| it != '\n');
                 exit = false;
             }
-            
+
             if self.parser.try_consume_str("/*").is_some() {
                 while self.parser.try_consume_str("*/").is_none() {
                     if self.parser.curr().is_none() {
@@ -292,7 +292,7 @@ impl<'a> Tokenizer<'a> {
                 }
                 exit = false
             }
-            
+
             if self.parser.curr().is_none() || exit {
                 break;
             }
@@ -315,7 +315,7 @@ impl<'a> Tokenizer<'a> {
             self.peek = Ok(None);
             return Ok(peek);
         }
-        
+
         self.skip_ignores()?;
 
         if let None = self.parser.curr() {
