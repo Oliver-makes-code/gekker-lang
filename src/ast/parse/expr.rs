@@ -8,15 +8,14 @@ use crate::{
 
 use super::error::ParserError;
 
-pub fn parse_root<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Expr<'a>>, ParserError<'a>> {
+type ExprResult<'a> = Result<Option<Expr<'a>>, ParserError<'a>>;
+
+pub fn parse_root<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
     return parse_operators(tokenizer, 0);
 }
 
 /// Pratt parsing!! Yippee!!!!
-pub fn parse_operators<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-    binding: usize,
-) -> Result<Option<Expr<'a>>, ParserError<'a>> {
+fn parse_operators<'a>(tokenizer: &mut Tokenizer<'a>, binding: usize) -> ExprResult<'a> {
     let Some(mut expr) = parse_unary(tokenizer)? else {
         return Ok(None);
     };
@@ -45,7 +44,7 @@ pub fn parse_operators<'a>(
     return Ok(Some(expr));
 }
 
-pub fn parse_unary<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Expr<'a>>, ParserError<'a>> {
+fn parse_unary<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
     let mut unary_ops = vec![];
     while let Some(op) = UnaryOp::try_parse(tokenizer)? {
         tokenizer.clear_peek_queue();
@@ -66,9 +65,7 @@ pub fn parse_unary<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Expr<'a>>
     return Ok(Some(expr));
 }
 
-pub fn parse_access<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<Expr<'a>>, ParserError<'a>> {
+fn parse_access<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
     let Some(mut expr) = parse_atom(tokenizer)? else {
         return Ok(None);
     };
@@ -80,10 +77,7 @@ pub fn parse_access<'a>(
     return Ok(Some(expr));
 }
 
-pub fn parse_access_arm<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-    expr: Expr<'a>,
-) -> Result<Option<Expr<'a>>, ParserError<'a>> {
+fn parse_access_arm<'a>(tokenizer: &mut Tokenizer<'a>, expr: Expr<'a>) -> ExprResult<'a> {
     if let Some((_, kind)) = AccessKind::try_parse(tokenizer)? {
         tokenizer.clear_peek_queue();
         let next = tokenizer.next()?;
@@ -126,7 +120,7 @@ pub fn parse_access_arm<'a>(
     }));
 }
 
-pub fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Expr<'a>>, ParserError<'a>> {
+fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
     let token = tokenizer.peek(0)?;
 
     let Some(slice) = token.slice else {
@@ -190,4 +184,113 @@ pub fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Expr<'a>>,
     tokenizer.clear_peek_queue();
 
     return Ok(Some(Expr { slice, kind }));
+}
+
+#[cfg(test)]
+mod test {
+    use std::assert_matches::assert_matches;
+
+    use crate::{
+        ast::{
+            expr::{BinOp, Expr, ExprKind},
+            parse::{error::ParserError, expr::parse_root},
+        },
+        tokenizer::{token::Number, Tokenizer},
+    };
+
+    type TestResult = Result<(), ParserError<'static>>;
+
+    #[test]
+    fn single_value() -> TestResult {
+        const SRC: &str = "15";
+        let mut tokenizer = Tokenizer::new(SRC);
+
+        let tree = parse_root(&mut tokenizer)?;
+
+        assert_matches!(
+            tree,
+            Some(Expr {
+                slice: _,
+                kind: ExprKind::Number(Number {
+                    whole: 15,
+                    decimal: 0.0
+                })
+            })
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn order_operations() -> TestResult {
+        const SRC: &str = "1 + 2 * 2";
+        let mut tokenizer = Tokenizer::new(SRC);
+
+        let tree = parse_root(&mut tokenizer)?;
+
+        assert_matches!(
+            tree,
+            Some(Expr {
+                slice: _,
+                kind:
+                    ExprKind::BinOp(
+                        box Expr {
+                            slice: _,
+                            kind:
+                                ExprKind::Number(Number {
+                                    whole: 1,
+                                    decimal: 0.0,
+                                }),
+                        },
+                        BinOp::Add,
+                        box Expr {
+                            slice: _,
+                            kind:
+                                ExprKind::BinOp(
+                                    box Expr {
+                                        slice: _,
+                                        kind:
+                                            ExprKind::Number(Number {
+                                                whole: 2,
+                                                decimal: 0.0,
+                                            }),
+                                    },
+                                    BinOp::Mul,
+                                    box Expr {
+                                        slice: _,
+                                        kind:
+                                            ExprKind::Number(Number {
+                                                whole: 2,
+                                                decimal: 0.0,
+                                            }),
+                                    },
+                                ),
+                        },
+                    ),
+            })
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn paren() -> TestResult {
+        const SRC: &str = "(123)";
+        let mut tokenizer = Tokenizer::new(SRC);
+
+        let tree = parse_root(&mut tokenizer)?;
+
+        assert_matches!(
+            tree,
+            Some(Expr {
+                slice: _,
+                kind: ExprKind::Number(Number {
+                    whole: 123,
+                    decimal: 0.0
+                })
+            })
+        );
+
+        Ok(())
+    }
 }

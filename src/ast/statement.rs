@@ -1,13 +1,8 @@
-use crate::{
-    string::StringSlice,
-    tokenizer::{
-        token::{Keyword, TokenKind},
-        Tokenizer,
-    },
-};
+use crate::string::StringSlice;
 
-use super::{expr::Expr, parse::error::ParserError};
+use super::expr::Expr;
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Statement<'a> {
     pub slice: StringSlice<'a>,
     pub kind: StatementKind<'a>,
@@ -15,31 +10,19 @@ pub struct Statement<'a> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum StatementKind<'a> {
-    Let(Mutability, &'a str, Expr<'a>),
+    VariableDecl(VariableModifier, VariableName<'a>, Option<Expr<'a>>),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Mutability {
-    Regular,
+pub enum VariableName<'a> {
+    Identifier(&'a str),
+    Discard,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum VariableModifier {
+    Let,
     Mut,
     Const,
     Static,
-}
-
-impl Mutability {
-    pub fn try_parse_variable<'a>(
-        tokenizer: &mut Tokenizer<'a>,
-    ) -> Result<Option<(StringSlice<'a>, Self)>, ParserError<'a>> {
-        let peek = tokenizer.peek(0)?;
-
-        let kind = match peek.kind {
-            TokenKind::Keyword(Keyword::Let) => Self::Regular,
-            TokenKind::Keyword(Keyword::Mut) => Self::Mut,
-            TokenKind::Keyword(Keyword::Const) => Self::Const,
-            TokenKind::Keyword(Keyword::Static) => Self::Static,
-            _ => return Ok(None),
-        };
-
-        return Ok(Some((peek.slice.unwrap(), kind)));
-    }
 }

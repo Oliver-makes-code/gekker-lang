@@ -1,5 +1,5 @@
 use crate::{
-    ast::parse::error::ParserError,
+    ast::{parse::error::ParserError, statement::VariableModifier},
     tokenizer::{
         token::{Keyword, TokenKind},
         Tokenizer,
@@ -29,6 +29,7 @@ impl Decl {
                 let next = tokenizer.peek(1)?;
 
                 if let TokenKind::Keyword(Keyword::Func) = next.kind {
+                    tokenizer.next()?;
                     return Ok(Some(Decl::ConstFunc));
                 }
 
@@ -38,5 +39,19 @@ impl Decl {
         };
 
         return Ok(Some(decl));
+    }
+
+    pub fn try_into_var(self) -> Option<VariableModifier> {
+        return Some(match self {
+            Self::Let => VariableModifier::Let,
+            Self::Mut => VariableModifier::Mut,
+            Self::Const => VariableModifier::Const,
+            Self::Static => VariableModifier::Static,
+            _ => return None,
+        });
+    }
+
+    pub fn try_into_func(self) {
+        todo!()
     }
 }

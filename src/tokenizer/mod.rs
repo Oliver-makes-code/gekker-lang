@@ -309,7 +309,7 @@ impl<'a> Tokenizer<'a> {
 
         while n >= self.peek.len() {
             let next = self.next_raw()?;
-            self.peek.push_back(next.clone());
+            self.peek.push_back(next);
         }
 
         return Ok(self.peek.get(n).unwrap().clone());
