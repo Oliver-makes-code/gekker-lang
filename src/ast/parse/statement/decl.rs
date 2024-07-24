@@ -1,4 +1,10 @@
-use crate::{ast::parse::error::ParserError, tokenizer::{token::{Keyword, TokenKind}, Tokenizer}};
+use crate::{
+    ast::parse::error::ParserError,
+    tokenizer::{
+        token::{Keyword, TokenKind},
+        Tokenizer,
+    },
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Decl {
@@ -7,7 +13,7 @@ pub enum Decl {
     Const,
     Static,
     Func,
-    ConstFunc
+    ConstFunc,
 }
 
 impl Decl {
@@ -21,14 +27,14 @@ impl Decl {
             TokenKind::Keyword(Keyword::Func) => Decl::Func,
             TokenKind::Keyword(Keyword::Const) => {
                 let next = tokenizer.peek(1)?;
-                
+
                 if let TokenKind::Keyword(Keyword::Func) = next.kind {
                     return Ok(Some(Decl::ConstFunc));
                 }
-                
+
                 return Ok(Some(Decl::Const));
-            },
-            _ => return Ok(None)
+            }
+            _ => return Ok(None),
         };
 
         return Ok(Some(decl));

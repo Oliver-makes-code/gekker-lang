@@ -1,4 +1,4 @@
-#![feature(decl_macro, let_chains)]
+#![feature(decl_macro, let_chains, assert_matches, box_patterns)]
 
 use ast::parse::{
     error::ParserError,
