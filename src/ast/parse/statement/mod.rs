@@ -12,7 +12,7 @@ use crate::{
     },
 };
 
-use super::error::ParserError;
+use super::{error::ParserError, types};
 
 mod decl;
 
@@ -71,11 +71,15 @@ fn parse_var_decl<'a>(
 
     tokenizer.clear_peek_queue();
 
-    let peek = tokenizer.peek(0)?;
+    let mut peek = tokenizer.peek(0)?;
     let end = peek.slice;
 
+    let mut ty = None;
+
     if let TokenKind::Symbol(Symbol::Colon) = peek.kind {
-        todo!("Parse type");
+        tokenizer.next()?;
+        ty = Some(types::parse_root(tokenizer)?);
+        peek = tokenizer.peek(0)?;
     }
 
     match peek.kind {
@@ -94,13 +98,13 @@ fn parse_var_decl<'a>(
 
             return Ok(Statement {
                 slice: slice.merge(end),
-                kind: StatementKind::VariableDecl(decl, name, Some(expr)),
+                kind: StatementKind::VariableDecl(decl, name, ty, Some(expr)),
             });
         }
         TokenKind::Symbol(Symbol::Semicolon) => {
             return Ok(Statement {
                 slice: slice.merge(end),
-                kind: StatementKind::VariableDecl(decl, name, None),
+                kind: StatementKind::VariableDecl(decl, name, ty, None),
             });
         }
         _ => {

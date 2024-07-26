@@ -1,6 +1,6 @@
 use crate::string::StringSlice;
 
-use super::expr::Expr;
+use super::{expr::Expr, types::Type};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Statement<'a> {
@@ -10,7 +10,7 @@ pub struct Statement<'a> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum StatementKind<'a> {
-    VariableDecl(VariableModifier, VariableName<'a>, Option<Expr<'a>>),
+    VariableDecl(VariableModifier, VariableName<'a>, Option<Type<'a>>, Option<Expr<'a>>),
     Expr(Expr<'a>),
 }
 
