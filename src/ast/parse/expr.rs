@@ -1,5 +1,8 @@
 use crate::{
-    ast::expr::{AccessKind, BinOp, Expr, ExprKind, UnaryOp},
+    ast::{
+        expr::{AccessKind, BinOp, Expr, ExprKind, UnaryOp},
+        IdentPath,
+    },
     tokenizer::{
         token::{Keyword, Symbol, TokenKind},
         Tokenizer,
@@ -87,7 +90,7 @@ fn parse_access_arm<'a>(tokenizer: &mut Tokenizer<'a>, expr: Expr<'a>) -> ExprRe
         };
 
         return Ok(Some(Expr {
-            slice: expr.slice.merge(next.slice.unwrap()),
+            slice: expr.slice.merge(next.slice),
             kind: ExprKind::Field(Box::new(expr), kind, ident),
         }));
     }
@@ -112,7 +115,7 @@ fn parse_access_arm<'a>(tokenizer: &mut Tokenizer<'a>, expr: Expr<'a>) -> ExprRe
         return Err(ParserError::UnexpectedToken(next, "Accessor"));
     };
 
-    let slice = next.slice.unwrap();
+    let slice = next.slice;
 
     return Ok(Some(Expr {
         slice: expr.slice.merge(slice),
@@ -121,34 +124,18 @@ fn parse_access_arm<'a>(tokenizer: &mut Tokenizer<'a>, expr: Expr<'a>) -> ExprRe
 }
 
 fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
+    if let Some((slice, idents)) = IdentPath::try_parse(tokenizer)? {
+        return Ok(Some(Expr {
+            slice,
+            kind: ExprKind::IdentPath(idents),
+        }));
+    }
+
     let token = tokenizer.peek(0)?;
 
-    let Some(slice) = token.slice else {
-        return Err(ParserError::UnexpectedEof);
-    };
+    let slice = token.slice;
 
     let kind = match token.kind {
-        TokenKind::Identifier(ident) => {
-            let mut slice = slice;
-            let mut idents = vec![ident];
-
-            tokenizer.clear_peek_queue();
-
-            while let TokenKind::Symbol(Symbol::DoubleColon) = tokenizer.peek(0)?.kind {
-                tokenizer.clear_peek_queue();
-                let next = tokenizer.next()?;
-                let TokenKind::Identifier(ident) = next.kind else {
-                    return Err(ParserError::UnexpectedToken(next, "Identifier"));
-                };
-                idents.push(ident);
-                slice = slice.merge(next.slice.unwrap());
-            }
-
-            return Ok(Some(Expr {
-                slice,
-                kind: ExprKind::Identifier(idents),
-            }));
-        }
         TokenKind::Char(c) => ExprKind::Char(c),
         TokenKind::Number(n) => ExprKind::Number(n),
         TokenKind::String(s) => ExprKind::String(s),
@@ -172,7 +159,7 @@ fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
             };
 
             return Ok(Some(Expr {
-                slice: slice.merge(next.slice.unwrap()),
+                slice: slice.merge(next.slice),
                 ..expr
             }));
         }

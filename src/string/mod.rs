@@ -11,6 +11,10 @@ pub struct StringSlice<'a> {
 
 impl<'a> StringSlice<'a> {
     pub fn value(&self) -> &'a str {
+        if self.start > self.src.len() || self.end > self.src.len() || self.start >= self.end {
+            return "";
+        }
+
         return &self.src[self.start..self.end];
     }
 
@@ -40,20 +44,16 @@ impl<'a> Deref for StringSlice<'a> {
 }
 
 pub trait ToStringSlice<'a> {
-    fn slice(&self, start: usize, end: usize) -> Option<StringSlice<'a>>;
+    fn slice(&self, start: usize, end: usize) -> StringSlice<'a>;
 }
 
 impl<'a> ToStringSlice<'a> for &'a str {
-    fn slice(&self, start: usize, end: usize) -> Option<StringSlice<'a>> {
-        if start > self.len() || end > self.len() || start >= end {
-            return None;
-        }
-
-        return Some(StringSlice {
+    fn slice(&self, start: usize, end: usize) -> StringSlice<'a> {
+        return StringSlice {
             src: self,
             start,
             end,
-        });
+        };
     }
 }
 
@@ -66,15 +66,11 @@ mod test {
         let s = "Test!";
         assert_eq!(
             s.slice(0, 2),
-            Some(StringSlice {
+            StringSlice {
                 src: s,
                 start: 0,
                 end: 2
-            })
+            }
         );
-
-        assert_eq!(s.slice(0, 0), None);
-        assert_eq!(s.slice(1, 0), None);
-        assert_eq!(s.slice(1, 3000), None);
     }
 }

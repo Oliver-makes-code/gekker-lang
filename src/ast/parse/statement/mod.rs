@@ -24,6 +24,20 @@ pub fn parse_root<'a>(tokenizer: &mut Tokenizer<'a>) -> OptStatementResult<'a> {
         return Ok(Some(decl));
     }
 
+    if let Some(expr) = expr::parse_root(tokenizer)? {
+        let peek = tokenizer.peek(0)?;
+        let end = peek.slice;
+
+        let TokenKind::Symbol(Symbol::Semicolon) = peek.kind else {
+            return Err(ParserError::UnexpectedToken(peek, "Semicolon"));
+        };
+
+        return Ok(Some(Statement {
+            slice: expr.slice.merge(end),
+            kind: StatementKind::Expr(expr),
+        }));
+    }
+
     return Ok(None);
 }
 
@@ -31,9 +45,7 @@ fn parse_decl<'a>(tokenizer: &mut Tokenizer<'a>) -> OptStatementResult<'a> {
     let Some(decl) = Decl::try_parse(tokenizer)? else {
         return Ok(None);
     };
-    let Some(slice) = tokenizer.peek(0)?.slice else {
-        return Err(ParserError::UnexpectedEof);
-    };
+    let slice = tokenizer.peek(0)?.slice;
     tokenizer.next()?;
 
     if let Some(decl) = decl.try_into_var() {
@@ -60,9 +72,7 @@ fn parse_var_decl<'a>(
     tokenizer.clear_peek_queue();
 
     let peek = tokenizer.peek(0)?;
-    let Some(end) = peek.slice else {
-        return Err(ParserError::UnexpectedEof);
-    };
+    let end = peek.slice;
 
     if let TokenKind::Symbol(Symbol::Colon) = peek.kind {
         todo!("Parse type");
@@ -76,9 +86,7 @@ fn parse_var_decl<'a>(
             };
 
             let peek = tokenizer.peek(0)?;
-            let Some(end) = peek.slice else {
-                return Err(ParserError::UnexpectedEof);
-            };
+            let end = peek.slice;
 
             let TokenKind::Symbol(Symbol::Semicolon) = peek.kind else {
                 return Err(ParserError::UnexpectedToken(peek, "Semicolon"));

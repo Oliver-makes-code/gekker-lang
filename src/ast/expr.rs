@@ -6,7 +6,7 @@ use crate::{
     },
 };
 
-use super::parse::error::ParserError;
+use super::{parse::error::ParserError, IdentPath};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Expr<'a> {
@@ -20,7 +20,7 @@ pub enum ExprKind<'a> {
     Field(Box<Expr<'a>>, AccessKind, &'a str),
     BinOp(Box<Expr<'a>>, BinOp, Box<Expr<'a>>),
     UnaryOp(UnaryOp, Box<Expr<'a>>),
-    Identifier(Vec<&'a str>),
+    IdentPath(IdentPath<'a>),
     Number(Number),
     String(String),
     Char(char),
@@ -92,7 +92,7 @@ impl AccessKind {
             _ => return Ok(None),
         };
 
-        return Ok(Some((peek.slice.unwrap(), kind)));
+        return Ok(Some((peek.slice, kind)));
     }
 }
 
@@ -113,7 +113,7 @@ impl UnaryOp {
             _ => return Ok(None),
         };
 
-        return Ok(Some((peek.slice.unwrap(), op)));
+        return Ok(Some((peek.slice, op)));
     }
 }
 
@@ -180,6 +180,6 @@ impl BinOp {
             _ => return Ok(None),
         };
 
-        return Ok(Some((peek.slice.unwrap(), op)));
+        return Ok(Some((peek.slice, op)));
     }
 }

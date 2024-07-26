@@ -1,6 +1,6 @@
 #![feature(decl_macro, let_chains, assert_matches, box_patterns)]
 
-use ast::parse::{error::ParserError, statement};
+use ast::parse::{error::ParserError, types};
 use tokenizer::Tokenizer;
 
 pub mod ast;
@@ -12,7 +12,7 @@ const STR: &'static str = include_str!("test.txt");
 fn main() -> Result<(), ParserError<'static>> {
     let mut tokenizer = Tokenizer::new(STR);
 
-    println!("{:#?}", statement::parse_root(&mut tokenizer)?);
+    println!("{:#?}", types::parse_root(&mut tokenizer)?);
 
     Ok(())
 }

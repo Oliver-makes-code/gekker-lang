@@ -2,7 +2,7 @@ use crate::string::{parser::StringParser, StringSlice};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Token<'a> {
-    pub slice: Option<StringSlice<'a>>,
+    pub slice: StringSlice<'a>,
     pub kind: TokenKind<'a>,
 }
 

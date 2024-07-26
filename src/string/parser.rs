@@ -27,12 +27,7 @@ impl<'a> StringParser<'a> {
     pub fn commit(&mut self) -> Option<StringSlice<'a>> {
         let start = self.idx_stack.pop()?;
 
-        if let Some(s) = self.src.slice(start, self.idx) {
-            return Some(s);
-        }
-
-        self.idx_stack.push(start);
-        return None;
+        return Some(self.src.slice(start, self.idx));
     }
 
     pub fn rollback(&mut self) -> bool {

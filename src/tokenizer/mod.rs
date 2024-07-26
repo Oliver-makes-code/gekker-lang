@@ -331,8 +331,9 @@ impl<'a> Tokenizer<'a> {
         self.skip_ignores()?;
 
         if let None = self.parser.curr() {
+            self.parser.checkout();
             return Ok(Token {
-                slice: None,
+                slice: self.parser.commit().unwrap(),
                 kind: TokenKind::Eof,
             });
         }
@@ -342,41 +343,41 @@ impl<'a> Tokenizer<'a> {
 
             if let Some(keyword) = Keyword::from(value) {
                 return Ok(Token {
-                    slice: Some(slice),
+                    slice,
                     kind: TokenKind::Keyword(keyword),
                 });
             }
 
             return Ok(Token {
-                slice: Some(slice),
+                slice,
                 kind: TokenKind::Identifier(value),
             });
         }
 
         if let Some((slice, symbol)) = Symbol::from(&mut self.parser) {
             return Ok(Token {
-                slice: Some(slice),
+                slice,
                 kind: TokenKind::Symbol(symbol),
             });
         }
 
         if let Some((slice, number)) = self.try_parse_number() {
             return Ok(Token {
-                slice: Some(slice),
+                slice,
                 kind: TokenKind::Number(number),
             });
         }
 
         if let Some((slice, char)) = self.try_parse_char()? {
             return Ok(Token {
-                slice: Some(slice),
+                slice,
                 kind: TokenKind::Char(char),
             });
         }
 
         if let Some((slice, str)) = self.try_parse_string()? {
             return Ok(Token {
-                slice: Some(slice),
+                slice,
                 kind: TokenKind::String(str),
             });
         }

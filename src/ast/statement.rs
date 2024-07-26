@@ -11,6 +11,7 @@ pub struct Statement<'a> {
 #[derive(Debug, Clone, PartialEq)]
 pub enum StatementKind<'a> {
     VariableDecl(VariableModifier, VariableName<'a>, Option<Expr<'a>>),
+    Expr(Expr<'a>),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

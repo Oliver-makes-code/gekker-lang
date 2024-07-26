@@ -97,7 +97,7 @@ are a bit different.
 Since function sizes are unknown, they need to be reference types.
 
 ```
-let f: ref func(i32, i32) i32 = Multiply;
+let f: ref func(i32, i32): i32 = Multiply;
 ```
 
 ## User-defined
