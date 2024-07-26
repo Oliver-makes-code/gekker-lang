@@ -42,8 +42,8 @@ pub enum UnaryOp {
     Sub,
     BoolNot,
     BitNot,
-    SafeRef,   // ref
-    UnsafeRef, // &
+    Reference, // ref
+    Pointer,   // &
     Deref,     // *
 }
 
@@ -107,9 +107,9 @@ impl UnaryOp {
             TokenKind::Symbol(Symbol::Sub) => Self::Sub,
             TokenKind::Symbol(Symbol::BoolNot) => Self::BoolNot,
             TokenKind::Symbol(Symbol::BitNot) => Self::BitNot,
-            TokenKind::Symbol(Symbol::BitAnd) => Self::UnsafeRef,
+            TokenKind::Symbol(Symbol::BitAnd) => Self::Pointer,
             TokenKind::Symbol(Symbol::Mul) => Self::Deref,
-            TokenKind::Keyword(Keyword::Ref) => Self::SafeRef,
+            TokenKind::Keyword(Keyword::Ref) => Self::Reference,
             _ => return Ok(None),
         };
 

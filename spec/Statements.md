@@ -106,6 +106,17 @@ label a {
 }
 ```
 
+You can also have the label yield a value.
+```
+let x = label x {
+    break x 15;
+};
+
+return label y {
+    break y 2;
+};
+```
+
 ## Match
 
 There's a couple forms of pattern matching.

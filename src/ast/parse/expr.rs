@@ -13,7 +13,7 @@ use super::error::ParserError;
 
 type ExprResult<'a> = Result<Option<Expr<'a>>, ParserError<'a>>;
 
-pub fn parse_root<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
+pub fn parse_expr<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
     return parse_operators(tokenizer, 0);
 }
 
@@ -102,7 +102,7 @@ fn parse_access_arm<'a>(tokenizer: &mut Tokenizer<'a>, expr: Expr<'a>) -> ExprRe
     };
     tokenizer.clear_peek_queue();
 
-    let Some(index) = parse_root(tokenizer)? else {
+    let Some(index) = parse_expr(tokenizer)? else {
         return Err(ParserError::UnexpectedToken(
             tokenizer.peek(0)?,
             "Expression",
@@ -145,7 +145,7 @@ fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
         TokenKind::Symbol(Symbol::ParenOpen) => {
             tokenizer.clear_peek_queue();
 
-            let Some(expr) = parse_root(tokenizer)? else {
+            let Some(expr) = parse_expr(tokenizer)? else {
                 return Err(ParserError::UnexpectedToken(
                     tokenizer.peek(0)?,
                     "Expression",
@@ -180,7 +180,7 @@ mod test {
     use crate::{
         ast::{
             expr::{BinOp, Expr, ExprKind},
-            parse::{error::ParserError, expr::parse_root},
+            parse::{error::ParserError, expr::parse_expr},
         },
         tokenizer::{token::Number, Tokenizer},
     };
@@ -192,7 +192,7 @@ mod test {
         const SRC: &str = "15";
         let mut tokenizer = Tokenizer::new(SRC);
 
-        let tree = parse_root(&mut tokenizer)?;
+        let tree = parse_expr(&mut tokenizer)?;
 
         assert_matches!(
             tree,
@@ -213,7 +213,7 @@ mod test {
         const SRC: &str = "1 + 2 * 2";
         let mut tokenizer = Tokenizer::new(SRC);
 
-        let tree = parse_root(&mut tokenizer)?;
+        let tree = parse_expr(&mut tokenizer)?;
 
         assert_matches!(
             tree,
@@ -265,7 +265,7 @@ mod test {
         const SRC: &str = "(123)";
         let mut tokenizer = Tokenizer::new(SRC);
 
-        let tree = parse_root(&mut tokenizer)?;
+        let tree = parse_expr(&mut tokenizer)?;
 
         assert_matches!(
             tree,

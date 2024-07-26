@@ -3,7 +3,7 @@ use decl::Decl;
 use crate::{
     ast::{
         parse::expr,
-        statement::{Statement, StatementKind, VariableModifier, VariableName},
+        statement::{Block, Statement, StatementKind, VariableModifier, VariableName},
     },
     string::StringSlice,
     tokenizer::{
@@ -19,18 +19,19 @@ mod decl;
 type OptStatementResult<'a> = Result<Option<Statement<'a>>, ParserError<'a>>;
 type StatementResult<'a> = Result<Statement<'a>, ParserError<'a>>;
 
-pub fn parse_root<'a>(tokenizer: &mut Tokenizer<'a>) -> OptStatementResult<'a> {
+pub fn parse_statement<'a>(tokenizer: &mut Tokenizer<'a>) -> OptStatementResult<'a> {
     if let Some(decl) = parse_decl(tokenizer)? {
         return Ok(Some(decl));
     }
 
-    if let Some(expr) = expr::parse_root(tokenizer)? {
+    if let Some(expr) = expr::parse_expr(tokenizer)? {
         let peek = tokenizer.peek(0)?;
         let end = peek.slice;
 
         let TokenKind::Symbol(Symbol::Semicolon) = peek.kind else {
             return Err(ParserError::UnexpectedToken(peek, "Semicolon"));
         };
+        tokenizer.next()?;
 
         return Ok(Some(Statement {
             slice: expr.slice.merge(end),
@@ -78,14 +79,14 @@ fn parse_var_decl<'a>(
 
     if let TokenKind::Symbol(Symbol::Colon) = peek.kind {
         tokenizer.next()?;
-        ty = Some(types::parse_root(tokenizer)?);
+        ty = Some(types::parse_type(tokenizer)?);
         peek = tokenizer.peek(0)?;
     }
 
     match peek.kind {
         TokenKind::Symbol(Symbol::Assign) => {
-            tokenizer.clear_peek_queue();
-            let Some(expr) = expr::parse_root(tokenizer)? else {
+            tokenizer.next()?;
+            let Some(expr) = expr::parse_expr(tokenizer)? else {
                 return Err(ParserError::UnexpectedToken(tokenizer.peek(0)?, "Expr"));
             };
 
@@ -95,6 +96,7 @@ fn parse_var_decl<'a>(
             let TokenKind::Symbol(Symbol::Semicolon) = peek.kind else {
                 return Err(ParserError::UnexpectedToken(peek, "Semicolon"));
             };
+            tokenizer.next()?;
 
             return Ok(Statement {
                 slice: slice.merge(end),
@@ -102,6 +104,7 @@ fn parse_var_decl<'a>(
             });
         }
         TokenKind::Symbol(Symbol::Semicolon) => {
+            tokenizer.next()?;
             return Ok(Statement {
                 slice: slice.merge(end),
                 kind: StatementKind::VariableDecl(decl, name, ty, None),
@@ -114,4 +117,37 @@ fn parse_var_decl<'a>(
             ))
         }
     }
+}
+
+pub fn parse_block<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<Block<'a>>, ParserError<'a>> {
+    let peek = tokenizer.peek(0)?;
+
+    let TokenKind::Symbol(Symbol::BraceOpen) = peek.kind else {
+        return Ok(None);
+    };
+
+    let start = peek.slice;
+
+    let mut peek = tokenizer.next()?;
+
+    let mut statements = vec![];
+
+    while peek.kind != TokenKind::Symbol(Symbol::BraceClose) {
+        let Some(statement) = parse_statement(tokenizer)? else {
+            return Err(ParserError::UnexpectedToken(peek, "Statement"));
+        };
+
+        statements.push(statement);
+
+        peek = tokenizer.peek(0)?;
+    }
+
+    let end = peek.slice;
+
+    return Ok(Some(Block {
+        slice: start.merge(end),
+        statements,
+    }));
 }

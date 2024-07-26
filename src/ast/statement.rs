@@ -9,8 +9,19 @@ pub struct Statement<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct Block<'a> {
+    pub slice: StringSlice<'a>,
+    pub statements: Vec<Statement<'a>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum StatementKind<'a> {
-    VariableDecl(VariableModifier, VariableName<'a>, Option<Type<'a>>, Option<Expr<'a>>),
+    VariableDecl(
+        VariableModifier,
+        VariableName<'a>,
+        Option<Type<'a>>,
+        Option<Expr<'a>>,
+    ),
     Expr(Expr<'a>),
 }
 

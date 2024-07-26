@@ -11,7 +11,7 @@ use crate::{
 
 use super::error::ParserError;
 
-pub fn parse_root<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserError<'a>> {
+pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserError<'a>> {
     let peek = tokenizer.peek(0)?;
 
     if let Some(primitive) = TypeKind::try_from_primitive(peek.kind.clone()) {
@@ -32,7 +32,7 @@ pub fn parse_root<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
             while peek.kind != TokenKind::Symbol(Symbol::Greater) {
                 tokenizer.next()?;
 
-                params.push(parse_root(tokenizer)?);
+                params.push(parse_type(tokenizer)?);
 
                 peek = tokenizer.peek(0)?;
 
@@ -66,7 +66,7 @@ pub fn parse_root<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
                 RefKind::Immutable
             };
 
-            let referenced = parse_root(tokenizer)?;
+            let referenced = parse_type(tokenizer)?;
 
             return Ok(Type {
                 slice: start.merge(referenced.slice),
@@ -76,7 +76,7 @@ pub fn parse_root<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
         TokenKind::Symbol(Symbol::Mul) => {
             tokenizer.next()?;
             let start = peek.slice;
-            let referenced = parse_root(tokenizer)?;
+            let referenced = parse_type(tokenizer)?;
             return Ok(Type {
                 slice: start.merge(referenced.slice),
                 kind: TypeKind::Ref(RefKind::Pointer, Box::new(referenced)),
@@ -85,7 +85,7 @@ pub fn parse_root<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
         TokenKind::Symbol(Symbol::Optional) => {
             tokenizer.next()?;
             let start = peek.slice;
-            let value = parse_root(tokenizer)?;
+            let value = parse_type(tokenizer)?;
             return Ok(Type {
                 slice: start.merge(value.slice),
                 kind: TypeKind::Option(Box::new(value)),
@@ -94,7 +94,7 @@ pub fn parse_root<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
         TokenKind::Symbol(Symbol::Range) => {
             tokenizer.next()?;
             let start = peek.slice;
-            let value = parse_root(tokenizer)?;
+            let value = parse_type(tokenizer)?;
             return Ok(Type {
                 slice: start.merge(value.slice),
                 kind: TypeKind::Range(Box::new(value)),
@@ -103,7 +103,7 @@ pub fn parse_root<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
         TokenKind::Symbol(Symbol::BracketOpen) => {
             tokenizer.next()?;
             let start = peek.slice;
-            let value = parse_root(tokenizer)?;
+            let value = parse_type(tokenizer)?;
 
             let peek = tokenizer.peek(0)?;
 
@@ -152,7 +152,7 @@ pub fn parse_root<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
             while peek.kind != TokenKind::Symbol(Symbol::ParenClose) {
                 tokenizer.next()?;
 
-                params.push(parse_root(tokenizer)?);
+                params.push(parse_type(tokenizer)?);
 
                 peek = tokenizer.peek(0)?;
 
@@ -174,7 +174,7 @@ pub fn parse_root<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
             };
             tokenizer.next()?;
 
-            let ret = parse_root(tokenizer)?;
+            let ret = parse_type(tokenizer)?;
             let end = ret.slice;
 
             return Ok(Type {
