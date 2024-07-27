@@ -11,10 +11,9 @@ use crate::{
 
 use super::{decl::parse_decl, error::ParserError};
 
-type OptStatementResult<'a> = Result<Option<Statement<'a>>, ParserError<'a>>;
-type StatementResult<'a> = Result<Statement<'a>, ParserError<'a>>;
+type StatementResult<'a> = Result<Option<Statement<'a>>, ParserError<'a>>;
 
-pub fn parse_statement<'a>(tokenizer: &mut Tokenizer<'a>) -> OptStatementResult<'a> {
+pub fn parse_statement<'a>(tokenizer: &mut Tokenizer<'a>) -> StatementResult<'a> {
     if let Some(decl) = parse_decl(tokenizer)? {
         return Ok(Some(Statement {
             slice: decl.slice.clone(),

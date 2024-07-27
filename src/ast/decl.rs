@@ -21,12 +21,24 @@ pub struct Decl<'a> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind<'a> {
-    VariableDecl(
+    Variable(
         VariableModifier,
         VariableName<'a>,
         Option<Type<'a>>,
         Option<Expr<'a>>,
     ),
+    Function(
+        FunctionModifier,
+        &'a str,
+        Vec<FuncParam<'a>>,
+        Option<Type<'a>>,
+    ),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FuncParam<'a> {
+    name: &'a str,
+    ty: Type<'a>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

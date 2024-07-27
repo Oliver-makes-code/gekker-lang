@@ -1,7 +1,7 @@
 use crate::{
     ast::{
         decl::{Decl, DeclKeyword, DeclKind},
-        statement::{FunctionModifier, StatementKind, VariableModifier, VariableName},
+        statement::{FunctionModifier, VariableModifier, VariableName},
     },
     string::StringSlice,
     tokenizer::{
@@ -87,14 +87,14 @@ fn parse_var_decl<'a>(
 
             return Ok(Decl {
                 slice: slice.merge(end),
-                kind: DeclKind::VariableDecl(decl, name, ty, Some(expr)),
+                kind: DeclKind::Variable(decl, name, ty, Some(expr)),
             });
         }
         TokenKind::Symbol(Symbol::Semicolon) => {
             tokenizer.next()?;
             return Ok(Decl {
                 slice: slice.merge(end),
-                kind: DeclKind::VariableDecl(decl, name, ty, None),
+                kind: DeclKind::Variable(decl, name, ty, None),
             });
         }
         _ => {
