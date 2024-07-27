@@ -62,7 +62,6 @@ fn parse_var_decl<'a>(
     slice: StringSlice<'a>,
 ) -> StatementResult<'a> {
     let peek = tokenizer.peek(0)?;
-    // TODO: parse type def
 
     let name = match peek.kind {
         TokenKind::Identifier(ident) => VariableName::Identifier(ident),
