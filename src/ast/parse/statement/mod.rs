@@ -12,7 +12,7 @@ use crate::{
     },
 };
 
-use super::{error::ParserError, types};
+use super::{error::ParserError, types::parse_type};
 
 mod decl;
 
@@ -53,7 +53,7 @@ fn parse_decl<'a>(tokenizer: &mut Tokenizer<'a>) -> OptStatementResult<'a> {
         return Ok(Some(parse_var_decl(tokenizer, decl, slice)?));
     }
 
-    todo!("Function decls");
+    todo!("Function, struct, enum decls");
 }
 
 fn parse_var_decl<'a>(
@@ -73,15 +73,18 @@ fn parse_var_decl<'a>(
     tokenizer.clear_peek_queue();
 
     let mut peek = tokenizer.peek(0)?;
-    let end = peek.slice;
 
     let mut ty = None;
 
-    if let TokenKind::Symbol(Symbol::Colon) = peek.kind {
+    let end = if let TokenKind::Symbol(Symbol::Colon) = peek.kind {
         tokenizer.next()?;
-        ty = Some(types::parse_type(tokenizer)?);
+        let parsed = parse_type(tokenizer)?;
+        ty = Some(parsed.clone());
         peek = tokenizer.peek(0)?;
-    }
+        parsed.slice
+    } else {
+        peek.slice
+    };
 
     match peek.kind {
         TokenKind::Symbol(Symbol::Assign) => {

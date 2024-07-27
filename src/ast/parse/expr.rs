@@ -1,6 +1,7 @@
 use crate::{
     ast::{
         expr::{AccessKind, BinOp, Expr, ExprKind, UnaryOp},
+        parse::types::parse_type,
         IdentPath,
     },
     tokenizer::{
@@ -71,7 +72,7 @@ fn parse_unary<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
 }
 
 fn parse_access<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
-    let Some(mut expr) = parse_atom(tokenizer)? else {
+    let Some(mut expr) = parse_cast(tokenizer)? else {
         return Ok(None);
     };
 
@@ -80,6 +81,27 @@ fn parse_access<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
     }
 
     return Ok(Some(expr));
+}
+
+fn parse_cast<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
+    let Some(atom) = parse_atom(tokenizer)? else {
+        return Ok(None);
+    };
+
+    let peek = tokenizer.peek(0)?;
+
+    let TokenKind::Symbol(Symbol::Colon) = peek.kind else {
+        return Ok(Some(atom));
+    };
+
+    tokenizer.next()?;
+
+    let ty = parse_type(tokenizer)?;
+
+    return Ok(Some(Expr {
+        slice: atom.slice.merge(ty.slice),
+        kind: ExprKind::Cast(Box::new(atom), ty),
+    }));
 }
 
 fn parse_access_arm<'a>(tokenizer: &mut Tokenizer<'a>, expr: Expr<'a>) -> ExprResult<'a> {

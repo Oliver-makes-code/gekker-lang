@@ -14,6 +14,8 @@ pub enum Decl {
     Static,
     Func,
     ConstFunc,
+    Struct,
+    Enum,
 }
 
 impl Decl {
@@ -25,6 +27,8 @@ impl Decl {
             TokenKind::Keyword(Keyword::Mut) => Decl::Mut,
             TokenKind::Keyword(Keyword::Static) => Decl::Static,
             TokenKind::Keyword(Keyword::Func) => Decl::Func,
+            TokenKind::Keyword(Keyword::Struct) => Decl::Struct,
+            TokenKind::Keyword(Keyword::Enum) => Decl::Enum,
             TokenKind::Keyword(Keyword::Const) => {
                 let next = tokenizer.peek(1)?;
 

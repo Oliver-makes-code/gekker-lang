@@ -6,7 +6,7 @@ use crate::{
     },
 };
 
-use super::{parse::error::ParserError, IdentPath};
+use super::{parse::error::ParserError, types::Type, IdentPath};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Expr<'a> {
@@ -20,6 +20,7 @@ pub enum ExprKind<'a> {
     Index(Box<Expr<'a>>, Box<Expr<'a>>),
     Field(Box<Expr<'a>>, AccessKind, &'a str),
     BinOp(Box<Expr<'a>>, BinOp, Box<Expr<'a>>),
+    Cast(Box<Expr<'a>>, Type<'a>),
     UnaryOp(UnaryOp, Box<Expr<'a>>),
     IdentPath(IdentPath<'a>),
     Number(Number),

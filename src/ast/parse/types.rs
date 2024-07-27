@@ -143,24 +143,24 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
             tokenizer.next()?;
             let start = peek.slice;
 
-            let mut peek = tokenizer.peek(0)?;
+            let peek = tokenizer.next()?;
             let TokenKind::Symbol(Symbol::ParenOpen) = peek.kind else {
                 return Err(ParserError::UnexpectedToken(peek, "Paren open"));
             };
+            let mut peek = tokenizer.peek(0)?;
             let mut params = vec![];
 
-            while peek.kind != TokenKind::Symbol(Symbol::ParenClose) {
-                tokenizer.next()?;
+            println!("{:?}", peek);
 
+            while peek.kind != TokenKind::Symbol(Symbol::ParenClose) {
                 params.push(parse_type(tokenizer)?);
 
-                peek = tokenizer.peek(0)?;
+                peek = tokenizer.next()?;
 
                 let TokenKind::Symbol(Symbol::Comma | Symbol::ParenClose) = peek.kind else {
                     return Err(ParserError::UnexpectedToken(peek, "Comma or Paren close"));
                 };
             }
-            tokenizer.next()?;
 
             let end = peek.slice;
 
