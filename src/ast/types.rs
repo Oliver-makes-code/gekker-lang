@@ -24,6 +24,8 @@ pub enum TypeKind<'a> {
     I32,
     U64,
     I64,
+    Usize,
+    Isize,
 
     F32,
     F64,
@@ -65,6 +67,8 @@ impl<'a> TypeKind<'a> {
             TokenKind::Keyword(Keyword::I32) => Self::I32,
             TokenKind::Keyword(Keyword::U64) => Self::U16,
             TokenKind::Keyword(Keyword::I64) => Self::I64,
+            TokenKind::Keyword(Keyword::Usize) => Self::Usize,
+            TokenKind::Keyword(Keyword::Isize) => Self::Isize,
 
             TokenKind::Keyword(Keyword::F32) => Self::F32,
             TokenKind::Keyword(Keyword::F64) => Self::F64,

@@ -56,6 +56,8 @@ pub enum Keyword {
     U32,
     I64,
     U64,
+    Usize,
+    Isize,
 
     F32,
     F64,
@@ -196,7 +198,9 @@ impl Keyword {
             "i32" => Self::I32,
             "u32" => Self::U32,
             "i64" => Self::I64,
-            "U64" => Self::U64,
+            "u64" => Self::U64,
+            "isize" => Self::Isize,
+            "usize" => Self::Usize,
 
             "f32" => Self::F32,
             "f64" => Self::F64,

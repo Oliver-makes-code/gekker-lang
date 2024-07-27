@@ -16,18 +16,18 @@ type DeclResult<'a> = Result<Decl<'a>, ParserError<'a>>;
 type OptDeclResult<'a> = Result<Option<Decl<'a>>, ParserError<'a>>;
 
 pub fn parse_decl<'a>(tokenizer: &mut Tokenizer<'a>) -> OptDeclResult<'a> {
-    let Some(decl) = DeclKeyword::try_parse(tokenizer)? else {
+    let slice = tokenizer.peek(0)?.slice;
+    let Some((is_pub, decl)) = DeclKeyword::try_parse(tokenizer)? else {
         return Ok(None);
     };
-    let slice = tokenizer.peek(0)?.slice;
     tokenizer.next()?;
 
     if let Some(decl) = decl.try_into_var() {
-        return Ok(Some(parse_var_decl(tokenizer, decl, slice)?));
+        return Ok(Some(parse_var_decl(tokenizer, decl, slice, is_pub)?));
     }
 
     if let Some(decl) = decl.try_into_func() {
-        return Ok(Some(parse_func_decl(tokenizer, decl, slice)?));
+        return Ok(Some(parse_func_decl(tokenizer, decl, slice, is_pub)?));
     }
 
     todo!("struct, enum decls");
@@ -37,6 +37,7 @@ fn parse_func_decl<'a>(
     tokenizer: &mut Tokenizer<'a>,
     decl: FunctionModifier,
     slice: StringSlice<'a>,
+    is_pub: bool,
 ) -> DeclResult<'a> {
     todo!()
 }
@@ -45,6 +46,7 @@ fn parse_var_decl<'a>(
     tokenizer: &mut Tokenizer<'a>,
     decl: VariableModifier,
     slice: StringSlice<'a>,
+    is_pub: bool,
 ) -> DeclResult<'a> {
     let peek = tokenizer.peek(0)?;
 
@@ -88,6 +90,7 @@ fn parse_var_decl<'a>(
             return Ok(Decl {
                 slice: slice.merge(end),
                 kind: DeclKind::Variable(decl, name, ty, Some(expr)),
+                is_pub,
             });
         }
         TokenKind::Symbol(Symbol::Semicolon) => {
@@ -95,6 +98,7 @@ fn parse_var_decl<'a>(
             return Ok(Decl {
                 slice: slice.merge(end),
                 kind: DeclKind::Variable(decl, name, ty, None),
+                is_pub,
             });
         }
         _ => {
