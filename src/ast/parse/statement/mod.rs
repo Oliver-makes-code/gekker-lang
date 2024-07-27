@@ -3,7 +3,7 @@ use decl::Decl;
 use crate::{
     ast::{
         parse::expr,
-        statement::{Block, Statement, StatementKind, VariableModifier, VariableName},
+        statement::{Block, FunctionModifier, Statement, StatementKind, VariableModifier, VariableName},
     },
     string::StringSlice,
     tokenizer::{
@@ -53,7 +53,19 @@ fn parse_decl<'a>(tokenizer: &mut Tokenizer<'a>) -> OptStatementResult<'a> {
         return Ok(Some(parse_var_decl(tokenizer, decl, slice)?));
     }
 
-    todo!("Function, struct, enum decls");
+    if let Some(decl) = decl.try_into_func() {
+        return Ok(Some(parse_func_decl(tokenizer, decl, slice)?));
+    }
+
+    todo!("struct, enum decls");
+}
+
+fn parse_func_decl<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+    decl: FunctionModifier,
+    slice: StringSlice<'a>,
+) -> StatementResult<'a> {
+    todo!()
 }
 
 fn parse_var_decl<'a>(

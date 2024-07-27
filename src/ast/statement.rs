@@ -38,3 +38,9 @@ pub enum VariableModifier {
     Const,
     Static,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FunctionModifier {
+    Func,
+    ConstFunc,
+}

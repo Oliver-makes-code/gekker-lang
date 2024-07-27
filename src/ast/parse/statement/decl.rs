@@ -1,5 +1,5 @@
 use crate::{
-    ast::{parse::error::ParserError, statement::VariableModifier},
+    ast::{parse::error::ParserError, statement::{FunctionModifier, VariableModifier}},
     tokenizer::{
         token::{Keyword, TokenKind},
         Tokenizer,
@@ -55,7 +55,11 @@ impl Decl {
         });
     }
 
-    pub fn try_into_func(self) {
-        todo!()
+    pub fn try_into_func(self) -> Option<FunctionModifier> {
+        return Some(match self {
+            Self::Func => FunctionModifier::Func,
+            Self::ConstFunc => FunctionModifier::ConstFunc,
+            _ => return None,
+        });
     }
 }
