@@ -16,6 +16,7 @@ pub struct Expr<'a> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind<'a> {
+    Invoke(Box<Expr<'a>>, Vec<Expr<'a>>),
     Index(Box<Expr<'a>>, Box<Expr<'a>>),
     Field(Box<Expr<'a>>, AccessKind, &'a str),
     BinOp(Box<Expr<'a>>, BinOp, Box<Expr<'a>>),
@@ -81,28 +82,20 @@ pub enum BinOp {
 }
 
 impl AccessKind {
-    pub fn try_parse<'a>(
-        tokenizer: &mut Tokenizer<'a>,
-    ) -> Result<Option<(StringSlice<'a>, Self)>, ParserError<'a>> {
-        let peek = tokenizer.peek(0)?;
-
-        let kind = match peek.kind {
+    pub fn try_parse(kind: TokenKind) -> Option<Self> {
+        let kind = match kind {
             TokenKind::Symbol(Symbol::Dot) => Self::Value,
             TokenKind::Symbol(Symbol::SmallArrow) => Self::Reference,
-            _ => return Ok(None),
+            _ => return None,
         };
 
-        return Ok(Some((peek.slice, kind)));
+        return Some(kind);
     }
 }
 
 impl UnaryOp {
-    pub fn try_parse<'a>(
-        tokenizer: &mut Tokenizer<'a>,
-    ) -> Result<Option<(StringSlice<'a>, Self)>, ParserError<'a>> {
-        let peek = tokenizer.peek(0)?;
-
-        let op = match peek.kind {
+    pub fn try_parse<'a>(kind: TokenKind) -> Option<Self> {
+        let op = match kind {
             TokenKind::Symbol(Symbol::Add) => Self::Add,
             TokenKind::Symbol(Symbol::Sub) => Self::Sub,
             TokenKind::Symbol(Symbol::BoolNot) => Self::BoolNot,
@@ -110,10 +103,10 @@ impl UnaryOp {
             TokenKind::Symbol(Symbol::BitAnd) => Self::Pointer,
             TokenKind::Symbol(Symbol::Mul) => Self::Deref,
             TokenKind::Keyword(Keyword::Ref) => Self::Reference,
-            _ => return Ok(None),
+            _ => return None,
         };
 
-        return Ok(Some((peek.slice, op)));
+        return Some(op);
     }
 }
 
