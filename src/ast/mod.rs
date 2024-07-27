@@ -8,6 +8,7 @@ use crate::{
     },
 };
 
+pub mod decl;
 pub mod expr;
 pub mod parse;
 pub mod statement;

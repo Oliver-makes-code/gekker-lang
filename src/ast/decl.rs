@@ -1,13 +1,36 @@
 use crate::{
-    ast::{parse::error::ParserError, statement::{FunctionModifier, VariableModifier}},
+    string::StringSlice,
     tokenizer::{
         token::{Keyword, TokenKind},
         Tokenizer,
     },
 };
 
+use super::{
+    expr::Expr,
+    parse::error::ParserError,
+    statement::{FunctionModifier, VariableModifier, VariableName},
+    types::Type,
+};
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Decl<'a> {
+    pub slice: StringSlice<'a>,
+    pub kind: DeclKind<'a>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum DeclKind<'a> {
+    VariableDecl(
+        VariableModifier,
+        VariableName<'a>,
+        Option<Type<'a>>,
+        Option<Expr<'a>>,
+    ),
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Decl {
+pub enum DeclKeyword {
     Let,
     Mut,
     Const,
@@ -18,26 +41,26 @@ pub enum Decl {
     Enum,
 }
 
-impl Decl {
+impl DeclKeyword {
     pub fn try_parse<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Self>, ParserError<'a>> {
         let peek = tokenizer.peek(0)?;
 
         let decl = match peek.kind {
-            TokenKind::Keyword(Keyword::Let) => Decl::Let,
-            TokenKind::Keyword(Keyword::Mut) => Decl::Mut,
-            TokenKind::Keyword(Keyword::Static) => Decl::Static,
-            TokenKind::Keyword(Keyword::Func) => Decl::Func,
-            TokenKind::Keyword(Keyword::Struct) => Decl::Struct,
-            TokenKind::Keyword(Keyword::Enum) => Decl::Enum,
+            TokenKind::Keyword(Keyword::Let) => Self::Let,
+            TokenKind::Keyword(Keyword::Mut) => Self::Mut,
+            TokenKind::Keyword(Keyword::Static) => Self::Static,
+            TokenKind::Keyword(Keyword::Func) => Self::Func,
+            TokenKind::Keyword(Keyword::Struct) => Self::Struct,
+            TokenKind::Keyword(Keyword::Enum) => Self::Enum,
             TokenKind::Keyword(Keyword::Const) => {
                 let next = tokenizer.peek(1)?;
 
                 if let TokenKind::Keyword(Keyword::Func) = next.kind {
                     tokenizer.next()?;
-                    return Ok(Some(Decl::ConstFunc));
+                    return Ok(Some(Self::ConstFunc));
                 }
 
-                return Ok(Some(Decl::Const));
+                return Ok(Some(Self::Const));
             }
             _ => return Ok(None),
         };

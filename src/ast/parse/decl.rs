@@ -1,9 +1,7 @@
-use decl::Decl;
-
 use crate::{
     ast::{
-        parse::expr,
-        statement::{Block, FunctionModifier, Statement, StatementKind, VariableModifier, VariableName},
+        decl::{Decl, DeclKeyword, DeclKind},
+        statement::{FunctionModifier, StatementKind, VariableModifier, VariableName},
     },
     string::StringSlice,
     tokenizer::{
@@ -12,38 +10,13 @@ use crate::{
     },
 };
 
-use super::{error::ParserError, types::parse_type};
+use super::{error::ParserError, expr::parse_expr, types::parse_type};
 
-mod decl;
+type DeclResult<'a> = Result<Decl<'a>, ParserError<'a>>;
+type OptDeclResult<'a> = Result<Option<Decl<'a>>, ParserError<'a>>;
 
-type OptStatementResult<'a> = Result<Option<Statement<'a>>, ParserError<'a>>;
-type StatementResult<'a> = Result<Statement<'a>, ParserError<'a>>;
-
-pub fn parse_statement<'a>(tokenizer: &mut Tokenizer<'a>) -> OptStatementResult<'a> {
-    if let Some(decl) = parse_decl(tokenizer)? {
-        return Ok(Some(decl));
-    }
-
-    if let Some(expr) = expr::parse_expr(tokenizer)? {
-        let peek = tokenizer.peek(0)?;
-        let end = peek.slice;
-
-        let TokenKind::Symbol(Symbol::Semicolon) = peek.kind else {
-            return Err(ParserError::UnexpectedToken(peek, "Semicolon"));
-        };
-        tokenizer.next()?;
-
-        return Ok(Some(Statement {
-            slice: expr.slice.merge(end),
-            kind: StatementKind::Expr(expr),
-        }));
-    }
-
-    return Ok(None);
-}
-
-fn parse_decl<'a>(tokenizer: &mut Tokenizer<'a>) -> OptStatementResult<'a> {
-    let Some(decl) = Decl::try_parse(tokenizer)? else {
+pub fn parse_decl<'a>(tokenizer: &mut Tokenizer<'a>) -> OptDeclResult<'a> {
+    let Some(decl) = DeclKeyword::try_parse(tokenizer)? else {
         return Ok(None);
     };
     let slice = tokenizer.peek(0)?.slice;
@@ -64,7 +37,7 @@ fn parse_func_decl<'a>(
     tokenizer: &mut Tokenizer<'a>,
     decl: FunctionModifier,
     slice: StringSlice<'a>,
-) -> StatementResult<'a> {
+) -> DeclResult<'a> {
     todo!()
 }
 
@@ -72,7 +45,7 @@ fn parse_var_decl<'a>(
     tokenizer: &mut Tokenizer<'a>,
     decl: VariableModifier,
     slice: StringSlice<'a>,
-) -> StatementResult<'a> {
+) -> DeclResult<'a> {
     let peek = tokenizer.peek(0)?;
 
     let name = match peek.kind {
@@ -100,7 +73,7 @@ fn parse_var_decl<'a>(
     match peek.kind {
         TokenKind::Symbol(Symbol::Assign) => {
             tokenizer.next()?;
-            let Some(expr) = expr::parse_expr(tokenizer)? else {
+            let Some(expr) = parse_expr(tokenizer)? else {
                 return Err(ParserError::UnexpectedToken(tokenizer.peek(0)?, "Expr"));
             };
 
@@ -112,16 +85,16 @@ fn parse_var_decl<'a>(
             };
             tokenizer.next()?;
 
-            return Ok(Statement {
+            return Ok(Decl {
                 slice: slice.merge(end),
-                kind: StatementKind::VariableDecl(decl, name, ty, Some(expr)),
+                kind: DeclKind::VariableDecl(decl, name, ty, Some(expr)),
             });
         }
         TokenKind::Symbol(Symbol::Semicolon) => {
             tokenizer.next()?;
-            return Ok(Statement {
+            return Ok(Decl {
                 slice: slice.merge(end),
-                kind: StatementKind::VariableDecl(decl, name, ty, None),
+                kind: DeclKind::VariableDecl(decl, name, ty, None),
             });
         }
         _ => {
@@ -131,37 +104,4 @@ fn parse_var_decl<'a>(
             ))
         }
     }
-}
-
-pub fn parse_block<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<Block<'a>>, ParserError<'a>> {
-    let peek = tokenizer.peek(0)?;
-
-    let TokenKind::Symbol(Symbol::BraceOpen) = peek.kind else {
-        return Ok(None);
-    };
-
-    let start = peek.slice;
-
-    let mut peek = tokenizer.next()?;
-
-    let mut statements = vec![];
-
-    while peek.kind != TokenKind::Symbol(Symbol::BraceClose) {
-        let Some(statement) = parse_statement(tokenizer)? else {
-            return Err(ParserError::UnexpectedToken(peek, "Statement"));
-        };
-
-        statements.push(statement);
-
-        peek = tokenizer.peek(0)?;
-    }
-
-    let end = peek.slice;
-
-    return Ok(Some(Block {
-        slice: start.merge(end),
-        statements,
-    }));
 }
