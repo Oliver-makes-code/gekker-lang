@@ -10,12 +10,13 @@ use super::{
     expr::Expr,
     parse::error::ParserError,
     statement::{Block, FunctionModifier, VariableModifier, VariableName},
-    types::Type,
+    types::{RefKind, Type},
 };
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Decl<'a> {
     pub slice: StringSlice<'a>,
+    pub attrs: Option<Attrs<'a>>,
     pub is_pub: bool,
     pub kind: DeclKind<'a>,
 }
@@ -31,6 +32,7 @@ pub enum DeclKind<'a> {
     Function {
         modifier: FunctionModifier,
         name: &'a str,
+        this_param: Option<ThisParam<'a>>,
         params: Vec<FuncParam<'a>>,
         ret: Option<Type<'a>>,
         body: Option<FuncBody<'a>>,
@@ -51,14 +53,35 @@ pub enum DeclKind<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct Attrs<'a> {
+    pub slice: StringSlice<'a>,
+    pub attrs: Vec<Attr<'a>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Attr<'a> {
+    pub slice: StringSlice<'a>,
+    pub name: &'a str,
+    pub params: Vec<Expr<'a>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum FuncBody<'a> {
     Block(Block<'a>),
     Expr(Expr<'a>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct ThisParam<'a> {
+    pub slice: StringSlice<'a>,
+    pub is_mut: bool,
+    pub ref_kind: Option<RefKind>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct FuncParam<'a> {
     pub slice: StringSlice<'a>,
+    pub is_mut: bool,
     pub name: &'a str,
     pub ty: Type<'a>,
 }

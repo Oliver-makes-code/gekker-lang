@@ -165,6 +165,7 @@ pub enum Symbol {
     WideArrow,   // =>
     SmallArrow,  // ->
     DoubleColon, // ::
+    Pound,       // #
 }
 
 impl Keyword {
@@ -297,6 +298,8 @@ impl Symbol {
             ")" => Self::ParenClose,
             "{" => Self::BraceOpen,
             "}" => Self::BraceClose,
+
+            "#" => Self::Pound,
         );
         return None;
     }

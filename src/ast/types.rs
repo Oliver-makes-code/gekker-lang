@@ -1,9 +1,12 @@
 use crate::{
     string::StringSlice,
-    tokenizer::token::{Keyword, TokenKind},
+    tokenizer::{
+        token::{Keyword, Symbol, TokenKind},
+        Tokenizer,
+    },
 };
 
-use super::IdentPath;
+use super::{parse::error::ParserError, IdentPath};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Type<'a> {
@@ -78,5 +81,31 @@ impl<'a> TypeKind<'a> {
 
             _ => return None,
         });
+    }
+}
+
+impl RefKind {
+    pub fn parse<'a>(
+        tokenizer: &mut Tokenizer<'a>,
+    ) -> Result<Option<(StringSlice<'a>, Self)>, ParserError<'a>> {
+        let peek = tokenizer.peek(0)?;
+
+        match peek.kind {
+            TokenKind::Symbol(Symbol::Mul) => {
+                tokenizer.next()?;
+                return Ok(Some((peek.slice, Self::Pointer)));
+            }
+            TokenKind::Keyword(Keyword::Ref) => {
+                tokenizer.next()?;
+                let start = peek.slice;
+                let peek = tokenizer.peek(0)?;
+                if let TokenKind::Keyword(Keyword::Mut) = peek.kind {
+                    tokenizer.next()?;
+                    return Ok(Some((start.merge(peek.slice), Self::Mutable)));
+                }
+                return Ok(Some((start, Self::Immutable)));
+            }
+            _ => return Ok(None),
+        }
     }
 }

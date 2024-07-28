@@ -54,34 +54,15 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
         });
     }
 
+    if let Some((slice, ref_kind)) = RefKind::parse(tokenizer)? {
+        let referenced = parse_type(tokenizer)?;
+        return Ok(Type {
+            slice: slice.merge(referenced.slice),
+            kind: TypeKind::Ref(ref_kind, Box::new(referenced)),
+        });
+    }
+
     match peek.kind {
-        TokenKind::Keyword(Keyword::Ref) => {
-            tokenizer.next()?;
-            let start = peek.slice;
-
-            let ref_kind = if let TokenKind::Keyword(Keyword::Mut) = tokenizer.peek(0)?.kind {
-                tokenizer.next()?;
-                RefKind::Mutable
-            } else {
-                RefKind::Immutable
-            };
-
-            let referenced = parse_type(tokenizer)?;
-
-            return Ok(Type {
-                slice: start.merge(referenced.slice),
-                kind: TypeKind::Ref(ref_kind, Box::new(referenced)),
-            });
-        }
-        TokenKind::Symbol(Symbol::Mul) => {
-            tokenizer.next()?;
-            let start = peek.slice;
-            let referenced = parse_type(tokenizer)?;
-            return Ok(Type {
-                slice: start.merge(referenced.slice),
-                kind: TypeKind::Ref(RefKind::Pointer, Box::new(referenced)),
-            });
-        }
         TokenKind::Symbol(Symbol::Optional) => {
             tokenizer.next()?;
             let start = peek.slice;

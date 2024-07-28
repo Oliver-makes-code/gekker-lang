@@ -1,5 +1,4 @@
 {
-    func f(x: i32) {
-        f(x+1);
-    }
+    #[test(1), test2]
+    func test(*this, mut x: i32);
 }
