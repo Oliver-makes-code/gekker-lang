@@ -16,12 +16,32 @@ pub struct Expr<'a> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind<'a> {
-    Invoke(Box<Expr<'a>>, Vec<Expr<'a>>),
-    Index(Box<Expr<'a>>, Box<Expr<'a>>),
-    Field(Box<Expr<'a>>, AccessKind, &'a str),
-    BinOp(Box<Expr<'a>>, BinOp, Box<Expr<'a>>),
-    Cast(Box<Expr<'a>>, Type<'a>),
-    UnaryOp(UnaryOp, Box<Expr<'a>>),
+    Invoke {
+        value: Box<Expr<'a>>,
+        params: Vec<Expr<'a>>,
+    },
+    Index {
+        value: Box<Expr<'a>>,
+        index: Box<Expr<'a>>,
+    },
+    Field {
+        value: Box<Expr<'a>>,
+        access: AccessKind,
+        field: &'a str,
+    },
+    BinOp {
+        lhs: Box<Expr<'a>>,
+        op: BinOp,
+        rhs: Box<Expr<'a>>,
+    },
+    Cast {
+        value: Box<Expr<'a>>,
+        ty: Type<'a>,
+    },
+    UnaryOp {
+        op: UnaryOp,
+        value: Box<Expr<'a>>,
+    },
     IdentPath(IdentPath<'a>),
     Number(Number),
     String(String),

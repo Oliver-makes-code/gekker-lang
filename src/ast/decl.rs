@@ -22,41 +22,60 @@ pub struct Decl<'a> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclKind<'a> {
-    Variable(
-        VariableModifier,
-        VariableName<'a>,
-        Option<Type<'a>>,
-        Option<Expr<'a>>,
-    ),
-    Function(
-        FunctionModifier,
-        &'a str,
-        Vec<FuncParam<'a>>,
-        Option<Type<'a>>,
-        Option<Block<'a>>,
-    ),
-    Enum(&'a str, Vec<EnumParam<'a>>),
-    IntEnum(&'a str, IntEnumType, Vec<IntEnumParam<'a>>),
-    Struct(&'a str, Vec<StructParam<'a>>),
+    Variable {
+        modifier: VariableModifier,
+        name: VariableName<'a>,
+        ty: Option<Type<'a>>,
+        init: Option<Expr<'a>>,
+    },
+    Function {
+        modifier: FunctionModifier,
+        name: &'a str,
+        params: Vec<FuncParam<'a>>,
+        ret: Option<Type<'a>>,
+        body: Option<FuncBody<'a>>,
+    },
+    Enum {
+        name: &'a str,
+        params: Vec<EnumParam<'a>>,
+    },
+    IntEnum {
+        name: &'a str,
+        ty: IntEnumType,
+        params: Vec<IntEnumParam<'a>>,
+    },
+    Struct {
+        name: &'a str,
+        params: Vec<StructParam<'a>>,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum FuncBody<'a> {
+    Block(Block<'a>),
+    Expr(Expr<'a>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FuncParam<'a> {
-    name: &'a str,
-    ty: Type<'a>,
+    pub slice: StringSlice<'a>,
+    pub name: &'a str,
+    pub ty: Type<'a>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct EnumParam<'a> {
-    name: &'a str,
-    ty: Type<'a>,
+    pub slice: StringSlice<'a>,
+    pub name: &'a str,
+    pub ty: Type<'a>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct StructParam<'a> {
-    is_pub: bool,
-    name: &'a str,
-    ty: Type<'a>,
+    pub slice: StringSlice<'a>,
+    pub is_pub: bool,
+    pub name: &'a str,
+    pub ty: Type<'a>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -73,8 +92,9 @@ pub enum IntEnumType {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct IntEnumParam<'a> {
-    name: &'a str,
-    value: Option<Expr<'a>>,
+    pub slice: StringSlice<'a>,
+    pub name: &'a str,
+    pub value: Option<Expr<'a>>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,7 +1,6 @@
 use crate::{
     ast::{
-        decl::{Decl, DeclKeyword, DeclKind},
-        statement::{FunctionModifier, VariableModifier, VariableName},
+        decl::{Decl, DeclKeyword, DeclKind, FuncBody, FuncParam}, statement::{FunctionModifier, VariableModifier, VariableName}
     },
     string::StringSlice,
     tokenizer::{
@@ -10,7 +9,7 @@ use crate::{
     },
 };
 
-use super::{error::ParserError, expr::parse_expr, types::parse_type};
+use super::{error::ParserError, expr::parse_expr, statement::parse_block, types::parse_type};
 
 type DeclResult<'a> = Result<Decl<'a>, ParserError<'a>>;
 type OptDeclResult<'a> = Result<Option<Decl<'a>>, ParserError<'a>>;
@@ -35,16 +34,113 @@ pub fn parse_decl<'a>(tokenizer: &mut Tokenizer<'a>) -> OptDeclResult<'a> {
 
 fn parse_func_decl<'a>(
     tokenizer: &mut Tokenizer<'a>,
-    decl: FunctionModifier,
+    modifier: FunctionModifier,
     slice: StringSlice<'a>,
     is_pub: bool,
 ) -> DeclResult<'a> {
-    todo!()
+    let peek = tokenizer.peek(0)?;
+
+    let TokenKind::Identifier(name) = peek.kind else {
+        return Err(ParserError::UnexpectedToken(peek, "Ident"));
+    };
+
+    tokenizer.next()?;
+
+    let peek = tokenizer.next()?;
+
+    let TokenKind::Symbol(Symbol::ParenOpen) = peek.kind else {
+        return Err(ParserError::UnexpectedToken(peek, "Paren open"));
+    };
+
+    let mut peek = tokenizer.peek(0)?;
+
+    let mut params = vec![];
+
+    while TokenKind::Symbol(Symbol::ParenClose) != peek.kind {
+        let next = tokenizer.next()?;
+
+        let start = next.slice;
+
+        let TokenKind::Identifier(name) = next.kind else {
+            return Err(ParserError::UnexpectedToken(next, "Identifier"));
+        };
+
+        let next = tokenizer.next()?;
+
+        let TokenKind::Symbol(Symbol::Colon) = next.kind else {
+            return Err(ParserError::UnexpectedToken(next, "Colon"));
+        };
+
+        let ty = parse_type(tokenizer)?;
+
+        params.push(FuncParam {
+            slice: start.merge(ty.slice),
+            name,
+            ty,
+        });
+
+        peek = tokenizer.peek(0)?;
+
+        let TokenKind::Symbol(Symbol::Comma | Symbol::ParenClose) = peek.kind else {
+            return Err(ParserError::UnexpectedToken(peek, "Comma or Paren close"));
+        };
+        if let TokenKind::Symbol(Symbol::Comma) = peek.kind {
+            tokenizer.next()?;
+        }
+    }
+    tokenizer.next()?;
+
+    let next = tokenizer.peek(0)?;
+
+    let ret = if let TokenKind::Symbol(Symbol::Colon) = next.kind {
+        tokenizer.next()?;
+        Some(parse_type(tokenizer)?)
+    } else {
+        None
+    };
+
+    let next = tokenizer.peek(0)?;
+    let mut end = next.slice;
+
+    let body = match next.kind {
+        TokenKind::Symbol(Symbol::WideArrow) => {
+            tokenizer.next()?;
+            let t = tokenizer.peek(0)?;
+            let Some(expr) = parse_expr(tokenizer)? else {
+                return Err(ParserError::UnexpectedToken(t, "Expr"));
+            };
+            let next = tokenizer.next()?;
+            let TokenKind::Symbol(Symbol::Semicolon) = next.kind else {
+                return Err(ParserError::UnexpectedToken(next, "Semicolon"));
+            };
+            end = next.slice;
+            Some(FuncBody::Expr(expr))
+        }
+        TokenKind::Symbol(Symbol::BraceOpen) => {
+            let block = parse_block(tokenizer)?.unwrap();
+
+            end = block.slice;
+
+            Some(FuncBody::Block(block))
+        }
+        TokenKind::Symbol(Symbol::Semicolon) => {
+            tokenizer.next()?;
+            None
+        },
+        _ => {
+            return Err(ParserError::UnexpectedToken(
+                next,
+                "Type, function body, or semicolon",
+            ))
+        }
+    };
+
+    Ok(Decl { slice: slice.merge(end), is_pub, kind: DeclKind::Function { modifier, name, params, ret, body } })
 }
 
 fn parse_var_decl<'a>(
     tokenizer: &mut Tokenizer<'a>,
-    decl: VariableModifier,
+    modifier: VariableModifier,
     slice: StringSlice<'a>,
     is_pub: bool,
 ) -> DeclResult<'a> {
@@ -56,7 +152,7 @@ fn parse_var_decl<'a>(
         _ => return Err(ParserError::UnexpectedToken(peek, "Variable name")),
     };
 
-    tokenizer.clear_peek_queue();
+    tokenizer.next()?;
 
     let mut peek = tokenizer.peek(0)?;
 
@@ -89,7 +185,12 @@ fn parse_var_decl<'a>(
 
             return Ok(Decl {
                 slice: slice.merge(end),
-                kind: DeclKind::Variable(decl, name, ty, Some(expr)),
+                kind: DeclKind::Variable {
+                    modifier,
+                    name,
+                    ty,
+                    init: Some(expr),
+                },
                 is_pub,
             });
         }
@@ -97,7 +198,12 @@ fn parse_var_decl<'a>(
             tokenizer.next()?;
             return Ok(Decl {
                 slice: slice.merge(end),
-                kind: DeclKind::Variable(decl, name, ty, None),
+                kind: DeclKind::Variable {
+                    modifier,
+                    name,
+                    ty,
+                    init: None,
+                },
                 is_pub,
             });
         }

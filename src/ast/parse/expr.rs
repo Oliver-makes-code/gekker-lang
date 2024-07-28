@@ -41,7 +41,11 @@ fn parse_operators<'a>(tokenizer: &mut Tokenizer<'a>, binding: usize) -> ExprRes
 
         expr = Expr {
             slice,
-            kind: ExprKind::BinOp(Box::new(expr), op, Box::new(rhs)),
+            kind: ExprKind::BinOp {
+                lhs: Box::new(expr),
+                op,
+                rhs: Box::new(rhs),
+            },
         };
     }
 
@@ -64,7 +68,10 @@ fn parse_unary<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
     while let Some((slice, op)) = unary_ops.pop() {
         expr = Expr {
             slice: slice.merge(expr.slice),
-            kind: ExprKind::UnaryOp(op, Box::new(expr)),
+            kind: ExprKind::UnaryOp {
+                op,
+                value: Box::new(expr),
+            },
         };
     }
 
@@ -100,7 +107,10 @@ fn parse_cast<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
 
     return Ok(Some(Expr {
         slice: atom.slice.merge(ty.slice),
-        kind: ExprKind::Cast(Box::new(atom), ty),
+        kind: ExprKind::Cast {
+            value: Box::new(atom),
+            ty,
+        },
     }));
 }
 
@@ -117,7 +127,11 @@ fn parse_access_arm<'a>(tokenizer: &mut Tokenizer<'a>, expr: Expr<'a>) -> ExprRe
 
         return Ok(Some(Expr {
             slice: expr.slice.merge(next.slice),
-            kind: ExprKind::Field(Box::new(expr), kind, ident),
+            kind: ExprKind::Field {
+                value: Box::new(expr),
+                access: kind,
+                field: ident,
+            },
         }));
     }
 
@@ -144,7 +158,10 @@ fn parse_access_arm<'a>(tokenizer: &mut Tokenizer<'a>, expr: Expr<'a>) -> ExprRe
 
         return Ok(Some(Expr {
             slice: expr.slice.merge(peek.slice),
-            kind: ExprKind::Invoke(Box::new(expr), exprs),
+            kind: ExprKind::Invoke {
+                value: Box::new(expr),
+                params: exprs,
+            },
         }));
     }
 
@@ -170,7 +187,10 @@ fn parse_access_arm<'a>(tokenizer: &mut Tokenizer<'a>, expr: Expr<'a>) -> ExprRe
 
     return Ok(Some(Expr {
         slice: expr.slice.merge(slice),
-        kind: ExprKind::Index(Box::new(expr), Box::new(index)),
+        kind: ExprKind::Index {
+            value: Box::new(expr),
+            index: Box::new(index),
+        },
     }));
 }
 
@@ -271,40 +291,44 @@ mod test {
             Some(Expr {
                 slice: _,
                 kind:
-                    ExprKind::BinOp(
-                        box Expr {
-                            slice: _,
-                            kind:
-                                ExprKind::Number(Number {
-                                    whole: 1,
-                                    decimal: 0.0,
-                                }),
-                        },
-                        BinOp::Add,
-                        box Expr {
-                            slice: _,
-                            kind:
-                                ExprKind::BinOp(
-                                    box Expr {
-                                        slice: _,
-                                        kind:
-                                            ExprKind::Number(Number {
-                                                whole: 2,
-                                                decimal: 0.0,
-                                            }),
+                    ExprKind::BinOp {
+                        lhs:
+                            box Expr {
+                                slice: _,
+                                kind:
+                                    ExprKind::Number(Number {
+                                        whole: 1,
+                                        decimal: 0.0,
+                                    }),
+                            },
+                        op: BinOp::Add,
+                        rhs:
+                            box Expr {
+                                slice: _,
+                                kind:
+                                    ExprKind::BinOp {
+                                        lhs:
+                                            box Expr {
+                                                slice: _,
+                                                kind:
+                                                    ExprKind::Number(Number {
+                                                        whole: 2,
+                                                        decimal: 0.0,
+                                                    }),
+                                            },
+                                        op: BinOp::Mul,
+                                        rhs:
+                                            box Expr {
+                                                slice: _,
+                                                kind:
+                                                    ExprKind::Number(Number {
+                                                        whole: 2,
+                                                        decimal: 0.0,
+                                                    }),
+                                            },
                                     },
-                                    BinOp::Mul,
-                                    box Expr {
-                                        slice: _,
-                                        kind:
-                                            ExprKind::Number(Number {
-                                                whole: 2,
-                                                decimal: 0.0,
-                                            }),
-                                    },
-                                ),
-                        },
-                    ),
+                            },
+                    },
             })
         );
 
