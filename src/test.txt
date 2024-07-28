@@ -1,4 +1,4 @@
 {
-    #[test(1), test2]
+    #[Extern(C)]
     func test(*this, mut x: i32);
 }

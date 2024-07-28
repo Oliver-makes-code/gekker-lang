@@ -32,11 +32,15 @@ pub fn parse_decl<'a>(tokenizer: &mut Tokenizer<'a>) -> OptDeclResult<'a> {
     tokenizer.next()?;
 
     if let Some(modifier) = decl.try_into_var() {
-        return Ok(Some(parse_var_decl(tokenizer, slice, attrs, modifier, is_pub)?));
+        return Ok(Some(parse_var_decl(
+            tokenizer, slice, attrs, modifier, is_pub,
+        )?));
     }
 
     if let Some(modifier) = decl.try_into_func() {
-        return Ok(Some(parse_func_decl(tokenizer, slice, attrs, modifier, is_pub)?));
+        return Ok(Some(parse_func_decl(
+            tokenizer, slice, attrs, modifier, is_pub,
+        )?));
     }
 
     if let DeclKeyword::Struct = decl {

@@ -50,6 +50,10 @@ pub enum DeclKind<'a> {
         name: &'a str,
         params: Vec<StructParam<'a>>,
     },
+    WrapperStruct {
+        name: &'a str,
+        ty: Type<'a>,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq)]
