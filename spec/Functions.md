@@ -53,11 +53,11 @@ const func DoSomething(x: i32): i32 {
 Functions can have attributes.
 
 ```
-[name]
+#[name]
 func DoSomething()
     => unit;
 
-[name(values...)]
+#[name(values...)]
 func DoSomethingElse()
     => unit;
 ```
@@ -72,27 +72,27 @@ We have a number of builtin function attributes.
     - Extern is used to change the semantics to follow other language's standards.
     ```
     // Looks for symbol `int32_t SDL_Init(uint32_t flags)`
-    [Extern(C)]
+    #[Extern(C)]
     func SDL_Init(flags: u32): i32;
 
     // Looks for symbol `void glClearColor(float, float, float, float)`
-    [Extern(C, symbol="glClearColor")]
+    #[Extern(C, symbol="glClearColor")]
     func ClearColor(r: f32, g: f32, b: f32, a: f32);
 
     // Creates the symbol `uint32_t GetRandomChar()`
-    [Extern(C)]
+    #[Extern(C)]
     func GetRandomChar(): char {
         return Random.Next<char>();
     }
 
     // Creates the symbol `void SomeLib_RenderCube()`
-    [Extern(C, symbol="SomeLib_RenderCube")]
+    #[Extern(C, symbol="SomeLib_RenderCube")]
     func RenderCube() {
         //...
     }
 
     // Creates the symbol `void Exit()`
-    [Extern(C)]
+    #[Extern(C)]
     func Exit(): never {
         //...
     }

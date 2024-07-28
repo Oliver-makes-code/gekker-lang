@@ -29,7 +29,26 @@ pub fn parse_decl<'a>(tokenizer: &mut Tokenizer<'a>) -> OptDeclResult<'a> {
         return Ok(Some(parse_func_decl(tokenizer, decl, slice, is_pub)?));
     }
 
-    todo!("struct, enum decls");
+    if let DeclKeyword::Struct = decl {
+        return Ok(Some(parse_struct_decl(tokenizer, slice, is_pub)?));
+    }
+
+    todo!("enum")
+}
+
+fn parse_struct_decl<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+    slice: StringSlice<'a>,
+    is_pub: bool,
+) -> DeclResult<'a> {
+    let ident = tokenizer.next()?;
+
+    let TokenKind::Identifier(name) = ident.kind else {
+        return Err(ParserError::UnexpectedToken(ident, "Ident"));
+    };
+
+
+    todo!()
 }
 
 fn parse_func_decl<'a>(
@@ -38,13 +57,11 @@ fn parse_func_decl<'a>(
     slice: StringSlice<'a>,
     is_pub: bool,
 ) -> DeclResult<'a> {
-    let peek = tokenizer.peek(0)?;
+    let ident = tokenizer.next()?;
 
-    let TokenKind::Identifier(name) = peek.kind else {
-        return Err(ParserError::UnexpectedToken(peek, "Ident"));
+    let TokenKind::Identifier(name) = ident.kind else {
+        return Err(ParserError::UnexpectedToken(ident, "Ident"));
     };
-
-    tokenizer.next()?;
 
     let peek = tokenizer.next()?;
 
@@ -144,15 +161,13 @@ fn parse_var_decl<'a>(
     slice: StringSlice<'a>,
     is_pub: bool,
 ) -> DeclResult<'a> {
-    let peek = tokenizer.peek(0)?;
+    let ident = tokenizer.next()?;
 
-    let name = match peek.kind {
+    let name = match ident.kind {
         TokenKind::Identifier(ident) => VariableName::Identifier(ident),
         TokenKind::Keyword(Keyword::Discard) => VariableName::Discard,
-        _ => return Err(ParserError::UnexpectedToken(peek, "Variable name")),
+        _ => return Err(ParserError::UnexpectedToken(ident, "Variable name")),
     };
-
-    tokenizer.next()?;
 
     let mut peek = tokenizer.peek(0)?;
 

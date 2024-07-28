@@ -22,7 +22,7 @@ func BubbleSort(arr: ref mut [T]) {
 ```
 
 ```
-[Flags]
+#[Flags]
 enum WindowFlags : u32 {
     Fullscreen = 0x00000001,
     OpenGl     = 0x00000002,
