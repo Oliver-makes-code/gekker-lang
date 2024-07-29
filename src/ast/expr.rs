@@ -42,7 +42,10 @@ pub enum ExprKind<'a> {
         op: UnaryOp,
         value: Box<Expr<'a>>,
     },
-    IdentPath(IdentPath<'a>),
+    Variable {
+        path: IdentPath<'a>,
+        generics: Vec<Type<'a>>,
+    },
     Number(Number),
     String(String),
     Char(char),

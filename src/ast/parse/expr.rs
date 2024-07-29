@@ -198,7 +198,10 @@ fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
     if let Some((slice, idents)) = IdentPath::try_parse(tokenizer)? {
         return Ok(Some(Expr {
             slice,
-            kind: ExprKind::IdentPath(idents),
+            kind: ExprKind::Variable {
+                path: idents,
+                generics: vec![],
+            },
         }));
     }
 
