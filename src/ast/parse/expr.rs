@@ -211,6 +211,8 @@ fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
         TokenKind::Number(n) => ExprKind::Number(n),
         TokenKind::String(s) => ExprKind::String(s),
         TokenKind::Keyword(Keyword::Discard) => ExprKind::Discard,
+        TokenKind::Keyword(Keyword::ThisValue) => ExprKind::This,
+        TokenKind::Keyword(Keyword::Default) => ExprKind::Default,
         TokenKind::Keyword(Keyword::True) => ExprKind::Bool(true),
         TokenKind::Keyword(Keyword::False) => ExprKind::Bool(false),
         TokenKind::Symbol(Symbol::ParenOpen) => {

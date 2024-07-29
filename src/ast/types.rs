@@ -36,17 +36,31 @@ pub enum TypeKind<'a> {
     Unit,
     Never,
 
-    Ref(RefKind, Box<Type<'a>>),
+    This,
 
-    Array(Box<Type<'a>>, usize),
+    Ref {
+        ref_kind: RefKind,
+        ty: Box<Type<'a>>,
+    },
+
+    Array {
+        ty: Box<Type<'a>>,
+        len: usize,
+    },
     Slice(Box<Type<'a>>),
 
     Option(Box<Type<'a>>),
     Range(Box<Type<'a>>),
 
-    Func(Vec<Type<'a>>, Option<Box<Type<'a>>>),
+    Func {
+        params: Vec<Type<'a>>,
+        ret: Option<Box<Type<'a>>>,
+    },
 
-    UserDefined(IdentPath<'a>, Vec<Type<'a>>),
+    UserDefined {
+        path: IdentPath<'a>,
+        generics: Vec<Type<'a>>,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -78,6 +92,8 @@ impl<'a> TypeKind<'a> {
 
             TokenKind::Keyword(Keyword::Unit) => Self::Unit,
             TokenKind::Keyword(Keyword::Never) => Self::Never,
+
+            TokenKind::Keyword(Keyword::ThisType) => Self::This,
 
             _ => return None,
         });

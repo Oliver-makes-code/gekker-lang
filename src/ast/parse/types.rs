@@ -45,12 +45,18 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
 
             return Ok(Type {
                 slice: start.merge(end),
-                kind: TypeKind::UserDefined(idents, params),
+                kind: TypeKind::UserDefined {
+                    path: idents,
+                    generics: params,
+                },
             });
         }
         return Ok(Type {
             slice: start,
-            kind: TypeKind::UserDefined(idents, vec![]),
+            kind: TypeKind::UserDefined {
+                path: idents,
+                generics: vec![],
+            },
         });
     }
 
@@ -58,7 +64,10 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
         let referenced = parse_type(tokenizer)?;
         return Ok(Type {
             slice: slice.merge(referenced.slice),
-            kind: TypeKind::Ref(ref_kind, Box::new(referenced)),
+            kind: TypeKind::Ref {
+                ref_kind,
+                ty: Box::new(referenced),
+            },
         });
     }
 
@@ -107,7 +116,10 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
 
                     return Ok(Type {
                         slice: start.merge(next.slice),
-                        kind: TypeKind::Array(Box::new(value), count as usize),
+                        kind: TypeKind::Array {
+                            ty: Box::new(value),
+                            len: count as usize,
+                        },
                     });
                 }
                 TokenKind::Symbol(Symbol::BracketClose) => {
@@ -150,7 +162,7 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
             let TokenKind::Symbol(Symbol::Colon) = peek.kind else {
                 return Ok(Type {
                     slice: start.merge(end),
-                    kind: TypeKind::Func(params, None),
+                    kind: TypeKind::Func { params, ret: None },
                 });
             };
             tokenizer.next()?;
@@ -160,7 +172,10 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
 
             return Ok(Type {
                 slice: start.merge(end),
-                kind: TypeKind::Func(params, Some(Box::new(ret))),
+                kind: TypeKind::Func {
+                    params,
+                    ret: Some(Box::new(ret)),
+                },
             });
         }
         _ => return Err(ParserError::UnexpectedToken(peek, "Type")),

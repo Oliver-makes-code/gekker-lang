@@ -33,18 +33,22 @@ impl<'a> IdentPath<'a> {
 
         let mut idents = vec![ident];
 
-        let mut peek = tokenizer.peek(0)?;
+        // let mut peek = tokenizer.peek(0)?;
         let mut end = start;
 
-        while let TokenKind::Symbol(Symbol::DoubleColon) = peek.kind {
-            tokenizer.next()?;
-            let next = tokenizer.next()?;
-            let TokenKind::Identifier(ident) = next.kind else {
-                return Err(ParserError::UnexpectedToken(next, "Identifier"));
+        loop {
+            let peek = tokenizer.peek(0)?;
+            let TokenKind::Symbol(Symbol::DoubleColon) = peek.kind else {
+                break;
             };
-            end = next.slice;
+            let peek = tokenizer.peek(1)?;
+            let TokenKind::Identifier(ident) = peek.kind else {
+                break;
+            };
+            tokenizer.next()?;
+            tokenizer.next()?;
+            end = peek.slice;
             idents.push(ident);
-            peek = tokenizer.peek(0)?;
         }
 
         return Ok(Some((start.merge(end), Self(idents))));

@@ -47,6 +47,8 @@ pub enum ExprKind<'a> {
     String(String),
     Char(char),
     Bool(bool),
+    This,
+    Default,
     Discard,
 }
 
@@ -190,6 +192,9 @@ impl BinOp {
             TokenKind::Symbol(Symbol::BoolAnd) => Self::BoolAnd,
             TokenKind::Symbol(Symbol::BoolOr) => Self::BoolOr,
             TokenKind::Symbol(Symbol::BoolXor) => Self::BoolXor,
+
+            TokenKind::Symbol(Symbol::Shl) => Self::Shl,
+            TokenKind::Symbol(Symbol::Shr) => Self::Shr,
 
             _ => return Ok(None),
         };

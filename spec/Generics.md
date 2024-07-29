@@ -8,7 +8,7 @@ meeting in the middle.
 
 ```
 where
-    T : operator +<T, T>
+    T : operator +<T, T>;
 func Double(val: T): T
     => val + val;
 ```
@@ -22,15 +22,15 @@ comma a declaration is required.
 
 ```
 where
-    T1 : Trait1 + Trait2,
-    T2 : Trait3 + Trait4
+    T1 : Trait1, Trait2;
+    T2 : Trait3, Trait4;
 func DoSomething();
 ```
 
 Types can also be generic, so you can have the following
 
 ```
-where TOk, TErr
+where TOk; TErr;
 enum Result {
     Ok(TOk),
     Err(TErr)
@@ -43,7 +43,7 @@ type, or if there are no implementations for a given type.
 
 ```
 where
-    T : operator +<T, T>
+    T : operator +<T, T>;
 func Double(val: T): T;
 
 func Double<i32>(val: i32): i32
@@ -56,7 +56,7 @@ throwing errors for specialized implementations
 
 ```
 where
-    T : operator +<T, T> + !i32
+    T : operator +<T, T>, !i32;
 func Double<T>(val: T): T
     => val + val;
 ```

@@ -67,6 +67,7 @@ pub enum Keyword {
     Discard,   // _
     True,
     False,
+    Default, // default
 
     // Statements / Control flow
     For,
@@ -210,6 +211,7 @@ impl Keyword {
             "_" => Self::Discard,
             "true" => Self::True,
             "false" => Self::False,
+            "default" => Self::Default,
 
             "for" => Self::For,
             "while" => Self::While,
