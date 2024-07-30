@@ -13,7 +13,7 @@ func Malloc(): *T;
 Namespaces are traversed with the `::` symbol.
 
 ```
-let x = Std::Malloc<i32>()
+let x = Std::Malloc:<i32>()
 ```
 
 There's also the `using` keyword
@@ -28,7 +28,7 @@ The `using` keyword would package all the symbols in the lattermost keyword.
 using Std::Random;
 
 func Main() {
-    Random::Next<i32>();
+    Random::Next:<i32>();
 }
 ```
 

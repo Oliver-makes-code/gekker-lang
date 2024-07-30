@@ -86,7 +86,7 @@ Some other special-case operators
         TRange : operator ..<TItem>
     impl Into<TRange> for Pair<TItem, TItem> {
         const func Into(this): TRange {
-            return TRange::Range(this);
+            return TRange.Range(this);
         }
     }
     ```

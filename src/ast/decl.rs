@@ -17,6 +17,7 @@ use super::{
 pub struct Decl<'a> {
     pub slice: StringSlice<'a>,
     pub attrs: Option<Attrs<'a>>,
+    pub generics: Option<GenericList<'a>>,
     pub is_pub: bool,
     pub kind: DeclKind<'a>,
 }
@@ -39,21 +40,47 @@ pub enum DeclKind<'a> {
     },
     Enum {
         name: &'a str,
-        params: Vec<EnumParam<'a>>,
+        body: StructBody<'a>,
     },
     IntEnum {
         name: &'a str,
         ty: IntEnumType,
-        params: Vec<IntEnumParam<'a>>,
+        body: IntEnumBody<'a>,
     },
     Struct {
         name: &'a str,
-        params: Vec<StructParam<'a>>,
+        body: StructBody<'a>,
     },
     WrapperStruct {
         name: &'a str,
         ty: Type<'a>,
     },
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct GenericList<'a> {
+    pub slice: StringSlice<'a>,
+    pub tys: Vec<GenericType<'a>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct GenericType<'a> {
+    pub slice: StringSlice<'a>,
+    pub name: &'a str,
+    pub clauses: Vec<TypeClause<'a>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct TypeClause<'a> {
+    pub slice: StringSlice<'a>,
+    pub exclude: bool,
+    pub ty: ClauseKind<'a>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ClauseKind<'a> {
+    RealType(Type<'a>),
+    Default,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -91,10 +118,9 @@ pub struct FuncParam<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct EnumParam<'a> {
+pub struct StructBody<'a> {
     pub slice: StringSlice<'a>,
-    pub name: &'a str,
-    pub ty: Type<'a>,
+    pub params: Vec<StructParam<'a>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -115,6 +141,12 @@ pub enum IntEnumType {
     I32,
     U64,
     I64,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct IntEnumBody<'a> {
+    pub slice: StringSlice<'a>,
+    pub params: Vec<IntEnumParam<'a>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -170,7 +202,7 @@ impl DeclKeyword {
             }
             _ => {
                 if is_pub {
-                    return Err(ParserError::UnexpectedToken(peek, "Declaration"));
+                    return Err(ParserError::UnexpectedToken(peek));
                 }
 
                 return Ok(None);
@@ -196,5 +228,22 @@ impl DeclKeyword {
             Self::ConstFunc => FunctionModifier::ConstFunc,
             _ => return None,
         });
+    }
+}
+
+impl IntEnumType {
+    pub fn from<'a>(kind: TokenKind<'a>) -> Option<Self> {
+        let val = match kind {
+            TokenKind::Keyword(Keyword::U8) => IntEnumType::U8,
+            TokenKind::Keyword(Keyword::I8) => IntEnumType::I8,
+            TokenKind::Keyword(Keyword::U16) => IntEnumType::U16,
+            TokenKind::Keyword(Keyword::I16) => IntEnumType::I16,
+            TokenKind::Keyword(Keyword::U32) => IntEnumType::U32,
+            TokenKind::Keyword(Keyword::I32) => IntEnumType::I32,
+            TokenKind::Keyword(Keyword::U64) => IntEnumType::U64,
+            TokenKind::Keyword(Keyword::I64) => IntEnumType::I64,
+            _ => return None,
+        };
+        return Some(val);
     }
 }

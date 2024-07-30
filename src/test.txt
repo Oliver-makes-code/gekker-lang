@@ -1,4 +1,3 @@
 {
-    #[Extern(C)]
-    func test(*this, mut x: i32);
+    Test:<i32>(1);
 }

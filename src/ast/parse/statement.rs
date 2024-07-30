@@ -26,7 +26,7 @@ pub fn parse_statement<'a>(tokenizer: &mut Tokenizer<'a>) -> StatementResult<'a>
         let end = peek.slice;
 
         let TokenKind::Symbol(Symbol::Semicolon) = peek.kind else {
-            return Err(ParserError::UnexpectedToken(peek, "Semicolon"));
+            return Err(ParserError::UnexpectedToken(peek));
         };
         tokenizer.next()?;
 
@@ -48,26 +48,29 @@ pub fn parse_block<'a>(
         return Ok(None);
     };
 
-    let start = peek.slice;
+    tokenizer.next()?;
 
-    let mut peek = tokenizer.next()?;
+    let start = peek.slice;
 
     let mut statements = vec![];
 
-    while peek.kind != TokenKind::Symbol(Symbol::BraceClose) {
+    loop {
+        let peek = tokenizer.peek(0)?;
         let Some(statement) = parse_statement(tokenizer)? else {
-            return Err(ParserError::UnexpectedToken(peek, "Statement"));
+            return Err(ParserError::UnexpectedToken(peek));
         };
 
         statements.push(statement);
 
-        peek = tokenizer.peek(0)?;
+        let next = tokenizer.next()?;
+
+        if let TokenKind::Symbol(Symbol::BraceClose) = next.kind {
+            let end = next.slice;
+
+            return Ok(Some(Block {
+                slice: start.merge(end),
+                statements,
+            }));
+        }
     }
-
-    let end = peek.slice;
-
-    return Ok(Some(Block {
-        slice: start.merge(end),
-        statements,
-    }));
 }

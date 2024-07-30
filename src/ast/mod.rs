@@ -15,12 +15,13 @@ pub mod statement;
 pub mod types;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct IdentPath<'a>(pub Vec<&'a str>);
+pub struct IdentPath<'a> {
+    pub slice: StringSlice<'a>,
+    pub path: Vec<&'a str>,
+}
 
 impl<'a> IdentPath<'a> {
-    pub fn try_parse(
-        tokenizer: &mut Tokenizer<'a>,
-    ) -> Result<Option<(StringSlice<'a>, Self)>, ParserError<'a>> {
+    pub fn try_parse(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Self>, ParserError<'a>> {
         let peek = tokenizer.peek(0)?;
 
         let TokenKind::Identifier(ident) = peek.kind else {
@@ -51,6 +52,9 @@ impl<'a> IdentPath<'a> {
             idents.push(ident);
         }
 
-        return Ok(Some((start.merge(end), Self(idents))));
+        return Ok(Some(Self {
+            slice: start.merge(end),
+            path: idents,
+        }));
     }
 }

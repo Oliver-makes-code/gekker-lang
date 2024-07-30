@@ -6,7 +6,11 @@ use crate::{
     },
 };
 
-use super::{parse::error::ParserError, IdentPath};
+use super::{
+    decl::{IntEnumBody, IntEnumType, StructBody},
+    parse::error::ParserError,
+    IdentPath,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Type<'a> {
@@ -55,6 +59,13 @@ pub enum TypeKind<'a> {
     Func {
         params: Vec<Type<'a>>,
         ret: Option<Box<Type<'a>>>,
+    },
+
+    Struct(StructBody<'a>),
+    Enum(StructBody<'a>),
+    IntEnum {
+        ty: IntEnumType,
+        body: IntEnumBody<'a>,
     },
 
     UserDefined {

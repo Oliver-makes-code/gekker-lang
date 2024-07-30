@@ -1,5 +1,6 @@
 use crate::{
     ast::{
+        decl::IntEnumType,
         types::{RefKind, Type, TypeKind},
         IdentPath,
     },
@@ -9,7 +10,10 @@ use crate::{
     },
 };
 
-use super::error::ParserError;
+use super::{
+    decl::{parse_int_enum_body, parse_struct_body},
+    error::ParserError,
+};
 
 pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserError<'a>> {
     let peek = tokenizer.peek(0)?;
@@ -22,7 +26,8 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
         });
     }
 
-    if let Some((start, idents)) = IdentPath::try_parse(tokenizer)? {
+    if let Some(idents) = IdentPath::try_parse(tokenizer)? {
+        let start = idents.slice;
         let peek = tokenizer.peek(0)?;
         if let TokenKind::Symbol(Symbol::Less) = peek.kind {
             let mut peek = peek;
@@ -37,7 +42,7 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
                 peek = tokenizer.peek(0)?;
 
                 let TokenKind::Symbol(Symbol::Comma | Symbol::Greater) = peek.kind else {
-                    return Err(ParserError::UnexpectedToken(peek, "Comma or Greater"));
+                    return Err(ParserError::UnexpectedToken(peek));
                 };
             }
 
@@ -106,12 +111,12 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
                         decimal: 0.0,
                     }) = next.kind
                     else {
-                        return Err(ParserError::UnexpectedToken(next, "Integer"));
+                        return Err(ParserError::UnexpectedToken(next));
                     };
 
                     let next = tokenizer.next()?;
                     let TokenKind::Symbol(Symbol::BracketClose) = next.kind else {
-                        return Err(ParserError::UnexpectedToken(next, "Bracket close"));
+                        return Err(ParserError::UnexpectedToken(next));
                     };
 
                     return Ok(Type {
@@ -129,7 +134,7 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
                         kind: TypeKind::Slice(Box::new(value)),
                     });
                 }
-                _ => return Err(ParserError::UnexpectedToken(peek, "Comma or Bracket close")),
+                _ => return Err(ParserError::UnexpectedToken(peek)),
             }
         }
         TokenKind::Keyword(Keyword::Func) => {
@@ -138,7 +143,7 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
 
             let peek = tokenizer.next()?;
             let TokenKind::Symbol(Symbol::ParenOpen) = peek.kind else {
-                return Err(ParserError::UnexpectedToken(peek, "Paren open"));
+                return Err(ParserError::UnexpectedToken(peek));
             };
             let mut peek = tokenizer.peek(0)?;
             let mut params = vec![];
@@ -151,7 +156,7 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
                 peek = tokenizer.next()?;
 
                 let TokenKind::Symbol(Symbol::Comma | Symbol::ParenClose) = peek.kind else {
-                    return Err(ParserError::UnexpectedToken(peek, "Comma or Paren close"));
+                    return Err(ParserError::UnexpectedToken(peek));
                 };
             }
 
@@ -178,6 +183,43 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
                 },
             });
         }
-        _ => return Err(ParserError::UnexpectedToken(peek, "Type")),
+        TokenKind::Keyword(Keyword::Struct) => {
+            tokenizer.next()?;
+            let start = peek.slice;
+
+            let body = parse_struct_body(tokenizer)?;
+
+            return Ok(Type {
+                slice: start.merge(body.slice),
+                kind: TypeKind::Struct(body),
+            });
+        }
+        TokenKind::Keyword(Keyword::Enum) => {
+            tokenizer.next()?;
+            let start = peek.slice;
+
+            if let TokenKind::Symbol(Symbol::Colon) = tokenizer.peek(0)?.kind {
+                tokenizer.next()?;
+                let next = tokenizer.next()?;
+                let Some(ty) = IntEnumType::from(next.kind.clone()) else {
+                    return Err(ParserError::UnexpectedToken(next));
+                };
+
+                let body = parse_int_enum_body(tokenizer)?;
+
+                return Ok(Type {
+                    slice: start.merge(body.slice),
+                    kind: TypeKind::IntEnum { ty, body },
+                });
+            }
+
+            let body = parse_struct_body(tokenizer)?;
+
+            return Ok(Type {
+                slice: start.merge(body.slice),
+                kind: TypeKind::Enum(body),
+            });
+        }
+        _ => return Err(ParserError::UnexpectedToken(peek)),
     }
 }
