@@ -133,23 +133,39 @@ fn parse_access_arm<'a>(tokenizer: &mut Tokenizer<'a>, expr: Expr<'a>) -> ExprRe
     }
 
     if let TokenKind::Symbol(Symbol::ParenOpen) = next.kind {
-        let mut peek = tokenizer.peek(1)?;
+        tokenizer.next()?;
         let mut exprs = vec![];
 
-        while peek.kind != TokenKind::Symbol(Symbol::ParenClose) {
-            tokenizer.next()?;
+        let peek = tokenizer.peek(0)?;
 
-            let t = tokenizer.peek(0)?;
-            let Some(expr) = parse_expr(tokenizer)? else {
-                return Err(ParserError::UnexpectedToken(t));
-            };
-            exprs.push(expr);
+        if peek.kind != TokenKind::Symbol(Symbol::ParenClose) {
+            let start = expr.slice.clone();
+            let value = expr;
+            loop {
+                let t = tokenizer.peek(0)?;
+                let Some(expr) = parse_expr(tokenizer)? else {
+                    return Err(ParserError::UnexpectedToken(t));
+                };
+                exprs.push(expr);
 
-            peek = tokenizer.peek(0)?;
+                let peek = tokenizer.next()?;
 
-            let TokenKind::Symbol(Symbol::Comma | Symbol::ParenClose) = peek.kind else {
-                return Err(ParserError::UnexpectedToken(peek));
-            };
+                match peek.kind {
+                    TokenKind::Symbol(Symbol::Comma) => (),
+                    TokenKind::Symbol(Symbol::ParenClose) => return Ok(Some(Expr {
+                        slice: start.merge(peek.slice),
+                        kind: ExprKind::Invoke {
+                            value: Box::new(value),
+                            params: exprs,
+                        },
+                    })),
+                    _ => return Err(ParserError::UnexpectedToken(peek)),
+                }
+
+                let TokenKind::Symbol(Symbol::Comma | Symbol::ParenClose) = peek.kind else {
+                    return Err(ParserError::UnexpectedToken(peek));
+                };
+            }
         }
         tokenizer.next()?;
 

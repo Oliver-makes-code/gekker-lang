@@ -1,7 +1,7 @@
 {
     if true {
         Print(1);
-    } else if false {
+    } else if X:<bool>() {
         Print(2);
     } else {
         Print(3);
