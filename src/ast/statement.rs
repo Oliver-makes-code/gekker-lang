@@ -18,6 +18,20 @@ pub struct Block<'a> {
 pub enum StatementKind<'a> {
     Decl(Decl<'a>),
     Expr(Expr<'a>),
+    If(IfStatement<'a>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct IfStatement<'a> {
+    pub slice: StringSlice<'a>,
+    pub conditions: Vec<IfCondition<'a>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct IfCondition<'a> {
+    pub slice: StringSlice<'a>,
+    pub condition: Option<Expr<'a>>,
+    pub block: Block<'a>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
