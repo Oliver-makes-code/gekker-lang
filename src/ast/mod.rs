@@ -11,6 +11,7 @@ use crate::{
 pub mod decl;
 pub mod expr;
 pub mod parse;
+pub mod pattern;
 pub mod statement;
 pub mod types;
 

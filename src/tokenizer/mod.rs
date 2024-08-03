@@ -315,10 +315,6 @@ impl<'a> Tokenizer<'a> {
         return Ok(self.peek.get(n).unwrap().clone());
     }
 
-    pub fn clear_peek_queue(&mut self) {
-        self.peek.clear();
-    }
-
     pub fn next(&mut self) -> Result<Token<'a>, TokenizeError<'a>> {
         if let Some(peek) = self.peek.pop_front() {
             return Ok(peek);

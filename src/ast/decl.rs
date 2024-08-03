@@ -17,7 +17,7 @@ use super::{
 pub struct Decl<'a> {
     pub slice: StringSlice<'a>,
     pub attrs: Option<Attrs<'a>>,
-    pub generics: Option<GenericList<'a>>,
+    pub generics: Option<GenericsDecl<'a>>,
     pub is_pub: bool,
     pub kind: DeclKind<'a>,
 }
@@ -58,7 +58,7 @@ pub enum DeclKind<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct GenericList<'a> {
+pub struct GenericsDecl<'a> {
     pub slice: StringSlice<'a>,
     pub tys: Vec<GenericType<'a>>,
 }

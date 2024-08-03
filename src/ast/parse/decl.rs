@@ -1,9 +1,9 @@
 use crate::{
     ast::{
         decl::{
-            Attr, Attrs, ClauseKind, Decl, DeclKeyword, DeclKind, FuncBody, FuncParam, GenericList,
-            GenericType, IntEnumBody, IntEnumParam, IntEnumType, StructBody, StructParam,
-            ThisParam, TypeClause,
+            Attr, Attrs, ClauseKind, Decl, DeclKeyword, DeclKind, FuncBody, FuncParam,
+            GenericsDecl, GenericType, IntEnumBody, IntEnumParam, IntEnumType, StructBody,
+            StructParam, ThisParam, TypeClause,
         },
         statement::{FunctionModifier, VariableModifier, VariableName},
         types::RefKind,
@@ -148,7 +148,7 @@ fn parse_attr<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Attr<'a>, ParserError
 
 fn parse_generic_list<'a>(
     tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<GenericList<'a>>, ParserError<'a>> {
+) -> Result<Option<GenericsDecl<'a>>, ParserError<'a>> {
     let peek = tokenizer.peek(0)?;
     let TokenKind::Keyword(Keyword::Where) = peek.kind else {
         return Ok(None);
@@ -164,7 +164,7 @@ fn parse_generic_list<'a>(
         tys.push(ty);
     }
 
-    return Ok(Some(GenericList {
+    return Ok(Some(GenericsDecl {
         slice: start.merge(last),
         tys,
     }));
@@ -254,7 +254,7 @@ fn parse_enum_decl<'a>(
     tokenizer: &mut Tokenizer<'a>,
     slice: StringSlice<'a>,
     attrs: Option<Attrs<'a>>,
-    generics: Option<GenericList<'a>>,
+    generics: Option<GenericsDecl<'a>>,
     is_pub: bool,
 ) -> DeclResult<'a> {
     let ident = tokenizer.next()?;
@@ -380,7 +380,7 @@ fn parse_struct_decl<'a>(
     tokenizer: &mut Tokenizer<'a>,
     slice: StringSlice<'a>,
     attrs: Option<Attrs<'a>>,
-    generics: Option<GenericList<'a>>,
+    generics: Option<GenericsDecl<'a>>,
     is_pub: bool,
 ) -> DeclResult<'a> {
     let ident = tokenizer.next()?;
@@ -501,7 +501,7 @@ fn parse_func_decl<'a>(
     tokenizer: &mut Tokenizer<'a>,
     slice: StringSlice<'a>,
     attrs: Option<Attrs<'a>>,
-    generics: Option<GenericList<'a>>,
+    generics: Option<GenericsDecl<'a>>,
     modifier: FunctionModifier,
     is_pub: bool,
 ) -> DeclResult<'a> {
@@ -671,7 +671,7 @@ fn parse_var_decl<'a>(
     tokenizer: &mut Tokenizer<'a>,
     slice: StringSlice<'a>,
     attrs: Option<Attrs<'a>>,
-    generics: Option<GenericList<'a>>,
+    generics: Option<GenericsDecl<'a>>,
     modifier: VariableModifier,
     is_pub: bool,
 ) -> DeclResult<'a> {

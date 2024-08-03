@@ -145,19 +145,19 @@ match thing {
 }
 ```
 
-There's also `if match` and `match else`
+There's also  `if let match` and `let match else`
 
 ```
-// If match
+// If let match
 
-if match Err(thing) => value {
+if let match Err(thing) => value {
     Print("Error! {}", thing);
     return;
 }
 
-// Match else
+// Let match else
 
-match Ok(thing) => value else {
+let match Ok(thing) => value else {
     Print("Error!");
     return;
 }
@@ -167,5 +167,5 @@ Print("{}", thing);
 `return if` also works with this
 
 ```
-return err if match Err(err) => value;
+return err if let match Err(err) => value;
 ```

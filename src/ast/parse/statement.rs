@@ -39,7 +39,7 @@ pub fn parse_statement<'a>(tokenizer: &mut Tokenizer<'a>) -> StatementResult<'a>
     if let Some(if_statement) = parse_if_statement(tokenizer)? {
         return Ok(Some(Statement {
             slice: if_statement.slice.clone(),
-            kind: StatementKind::If(if_statement)
+            kind: StatementKind::If(if_statement),
         }));
     }
 

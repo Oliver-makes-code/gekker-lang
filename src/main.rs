@@ -4,6 +4,7 @@ use ast::parse::{error::ParserError, statement::parse_block};
 use tokenizer::Tokenizer;
 
 pub mod ast;
+pub mod src_gen;
 pub mod string;
 pub mod tokenizer;
 

@@ -1,6 +1,6 @@
 use crate::{
     ast::{
-        expr::{AccessKind, BinOp, Expr, ExprKind, UnaryOp},
+        expr::{AccessKind, BinOp, Expr, ExprKind, GenericsInstance, UnaryOp},
         parse::types::parse_type,
         IdentPath,
     },
@@ -24,12 +24,17 @@ fn parse_operators<'a>(tokenizer: &mut Tokenizer<'a>, binding: usize) -> ExprRes
         return Ok(None);
     };
 
-    while let Some((_, op)) = BinOp::try_parse(tokenizer)? {
+    loop {
+        let peek = tokenizer.peek(0)?;
+        let Some(op) = BinOp::try_parse(peek.kind.clone()) else {
+            break;
+        };
+
         let (lhs_binding, rhs_binding) = op.binding();
         if lhs_binding < binding {
             break;
         }
-        tokenizer.clear_peek_queue();
+        tokenizer.next()?;
 
         let Some(rhs) = parse_operators(tokenizer, rhs_binding)? else {
             return Err(ParserError::UnexpectedToken(tokenizer.peek(0)?));
@@ -122,12 +127,21 @@ fn parse_access_arm<'a>(tokenizer: &mut Tokenizer<'a>, expr: Expr<'a>) -> ExprRe
             return Err(ParserError::UnexpectedToken(next));
         };
 
+        let generics = parse_generics_instance(tokenizer)?;
+
+        let slice = if let Some(g) = generics.clone() {
+            g.slice
+        } else {
+            next.slice
+        };
+
         return Ok(Some(Expr {
-            slice: expr.slice.merge(next.slice),
+            slice: expr.slice.merge(slice),
             kind: ExprKind::Field {
                 value: Box::new(expr),
                 access: kind,
                 field: ident,
+                generics,
             },
         }));
     }
@@ -152,13 +166,15 @@ fn parse_access_arm<'a>(tokenizer: &mut Tokenizer<'a>, expr: Expr<'a>) -> ExprRe
 
                 match peek.kind {
                     TokenKind::Symbol(Symbol::Comma) => (),
-                    TokenKind::Symbol(Symbol::ParenClose) => return Ok(Some(Expr {
-                        slice: start.merge(peek.slice),
-                        kind: ExprKind::Invoke {
-                            value: Box::new(value),
-                            params: exprs,
-                        },
-                    })),
+                    TokenKind::Symbol(Symbol::ParenClose) => {
+                        return Ok(Some(Expr {
+                            slice: start.merge(peek.slice),
+                            kind: ExprKind::Invoke {
+                                value: Box::new(value),
+                                params: exprs,
+                            },
+                        }))
+                    }
                     _ => return Err(ParserError::UnexpectedToken(peek)),
                 }
 
@@ -205,55 +221,8 @@ fn parse_access_arm<'a>(tokenizer: &mut Tokenizer<'a>, expr: Expr<'a>) -> ExprRe
 }
 
 fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
-    if let Some(idents) = IdentPath::try_parse(tokenizer)? {
-        if let TokenKind::Symbol(Symbol::Colon) = tokenizer.peek(0)?.kind
-            && let TokenKind::Symbol(Symbol::Less) = tokenizer.peek(1)?.kind
-        {
-            tokenizer.next()?;
-            tokenizer.next()?;
-
-            let mut generics = vec![];
-
-            loop {
-                let ty = parse_type(tokenizer)?;
-                generics.push(ty);
-
-                let next = tokenizer.next()?;
-
-                match next.kind {
-                    TokenKind::Symbol(Symbol::Comma) => {
-                        let peek = tokenizer.peek(0)?;
-                        if let TokenKind::Symbol(Symbol::Greater) = peek.kind {
-                            tokenizer.next()?;
-                            return Ok(Some(Expr {
-                                slice: idents.slice.merge(next.slice),
-                                kind: ExprKind::Variable {
-                                    path: idents,
-                                    generics: generics,
-                                },
-                            }));
-                        }
-                    }
-                    TokenKind::Symbol(Symbol::Greater) => {
-                        return Ok(Some(Expr {
-                            slice: idents.slice.merge(next.slice),
-                            kind: ExprKind::Variable {
-                                path: idents,
-                                generics: generics,
-                            },
-                        }));
-                    }
-                    _ => return Err(ParserError::UnexpectedToken(next)),
-                }
-            }
-        }
-        return Ok(Some(Expr {
-            slice: idents.slice,
-            kind: ExprKind::Variable {
-                path: idents,
-                generics: vec![],
-            },
-        }));
+    if let Some(ident) = parse_ident(tokenizer)? {
+        return Ok(Some(ident));
     }
 
     let token = tokenizer.peek(0)?;
@@ -270,7 +239,7 @@ fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
         TokenKind::Keyword(Keyword::True) => ExprKind::Bool(true),
         TokenKind::Keyword(Keyword::False) => ExprKind::Bool(false),
         TokenKind::Symbol(Symbol::ParenOpen) => {
-            tokenizer.clear_peek_queue();
+            tokenizer.next()?;
 
             let Some(expr) = parse_expr(tokenizer)? else {
                 return Err(ParserError::UnexpectedToken(tokenizer.peek(0)?));
@@ -292,9 +261,83 @@ fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
         }
     };
 
-    tokenizer.clear_peek_queue();
+    tokenizer.next()?;
 
     return Ok(Some(Expr { slice, kind }));
+}
+
+fn parse_ident<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
+    let Some(path) = IdentPath::try_parse(tokenizer)? else {
+        return Ok(None);
+    };
+
+    let generics = parse_generics_instance(tokenizer)?;
+
+    let slice = if let Some(g) = generics.clone() {
+        path.slice.merge(g.slice)
+    } else {
+        path.slice
+    };
+
+    return Ok(Some(Expr {
+        slice,
+        kind: ExprKind::Variable { path, generics },
+    }));
+}
+
+pub fn parse_generics_instance<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<GenericsInstance<'a>>, ParserError<'a>> {
+    let peek = tokenizer.peek(0)?;
+    let TokenKind::Symbol(Symbol::Colon) = peek.kind else {
+        return Ok(None);
+    };
+    let start = peek.slice;
+    tokenizer.next()?;
+
+    let peek = tokenizer.peek(0)?;
+    let TokenKind::Symbol(Symbol::Less) = peek.kind else {
+        return Ok(None);
+    };
+    tokenizer.next()?;
+
+    let mut params = vec![];
+
+    let peek = tokenizer.peek(0)?;
+
+    let TokenKind::Symbol(Symbol::Greater) = peek.kind else {
+        loop {
+            let param = parse_type(tokenizer)?;
+            params.push(param);
+
+            let next = tokenizer.next()?;
+
+            match next.kind {
+                TokenKind::Symbol(Symbol::Comma) => {
+                    let peek = tokenizer.peek(0)?;
+                    if let TokenKind::Symbol(Symbol::Greater) = peek.kind {
+                        tokenizer.next()?;
+                        return Ok(Some(GenericsInstance {
+                            slice: start.merge(peek.slice),
+                            params,
+                        }));
+                    }
+                }
+                TokenKind::Symbol(Symbol::Greater) => {
+                    return Ok(Some(GenericsInstance {
+                        slice: start.merge(next.slice),
+                        params,
+                    }));
+                }
+                _ => return Err(ParserError::UnexpectedToken(next)),
+            }
+        }
+    };
+
+    return Ok(Some(GenericsInstance {
+        slice: start.merge(tokenizer.next()?.slice),
+        params,
+    }));
 }
 
 #[cfg(test)]

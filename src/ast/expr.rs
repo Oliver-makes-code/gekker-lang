@@ -1,12 +1,9 @@
 use crate::{
     string::StringSlice,
-    tokenizer::{
-        token::{Keyword, Number, Symbol, TokenKind},
-        Tokenizer,
-    },
+    tokenizer::token::{Keyword, Number, Symbol, TokenKind},
 };
 
-use super::{parse::error::ParserError, types::Type, IdentPath};
+use super::{types::Type, IdentPath};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Expr<'a> {
@@ -28,6 +25,7 @@ pub enum ExprKind<'a> {
         value: Box<Expr<'a>>,
         access: AccessKind,
         field: &'a str,
+        generics: Option<GenericsInstance<'a>>,
     },
     BinOp {
         lhs: Box<Expr<'a>>,
@@ -44,7 +42,7 @@ pub enum ExprKind<'a> {
     },
     Variable {
         path: IdentPath<'a>,
-        generics: Vec<Type<'a>>,
+        generics: Option<GenericsInstance<'a>>,
     },
     Number(Number),
     String(String),
@@ -53,6 +51,12 @@ pub enum ExprKind<'a> {
     This,
     Default,
     Discard,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct GenericsInstance<'a> {
+    pub slice: StringSlice<'a>,
+    pub params: Vec<Type<'a>>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -164,12 +168,8 @@ impl BinOp {
         }
     }
 
-    pub fn try_parse<'a>(
-        tokenizer: &mut Tokenizer<'a>,
-    ) -> Result<Option<(StringSlice<'a>, Self)>, ParserError<'a>> {
-        let peek = tokenizer.peek(0)?;
-
-        let op = match peek.kind {
+    pub fn try_parse<'a>(kind: TokenKind<'a>) -> Option<Self> {
+        let op = match kind {
             TokenKind::Symbol(Symbol::Add) => Self::Add,
             TokenKind::Symbol(Symbol::Sub) => Self::Sub,
             TokenKind::Symbol(Symbol::Mul) => Self::Mul,
@@ -199,9 +199,9 @@ impl BinOp {
             TokenKind::Symbol(Symbol::Shl) => Self::Shl,
             TokenKind::Symbol(Symbol::Shr) => Self::Shr,
 
-            _ => return Ok(None),
+            _ => return None,
         };
 
-        return Ok(Some((peek.slice, op)));
+        return Some(op);
     }
 }
