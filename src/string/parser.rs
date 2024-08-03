@@ -16,7 +16,7 @@ impl<'a> StringParser<'a> {
         };
     }
 
-    pub fn idx(&mut self) -> usize {
+    pub fn idx(&self) -> usize {
         return self.idx;
     }
 
