@@ -22,6 +22,8 @@ trait Copy {
 We our version of operator overloads are with Operator Traits. Functions for
 operator traits must always be `const func`s.
 
+The specifics of Operator Traits are subject to change.
+
 ```
 impl operator +<Vec3, Vec3> for Vec3 {
     const func Add(lhs: Vec3, rhs: Vec3): Vec3
