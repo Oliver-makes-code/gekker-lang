@@ -48,6 +48,22 @@ const func DoSomething(x: i32): i32 {
 }
 ```
 
+## Lambdas
+
+Lambdas are defined using the `func` keyword.
+
+They can have params and captures. Captures are explicit, like in C++.
+
+Here's a couple examples
+
+```
+func => 1 // a lambda that always returns 1
+func(x) => x + 1 // a lambda that takes in x and returns x + 1
+func[x] => x + 1 // a lambda that captures x and returns x + 1
+func(x)[y] => x + y // a lambda that takes in x, captures y, and returns x + y
+func {} // a lambda with a block
+```
+
 ## Attributes
 
 Functions can have attributes.
