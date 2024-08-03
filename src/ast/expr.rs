@@ -44,6 +44,8 @@ pub enum ExprKind<'a> {
         path: IdentPath<'a>,
         generics: Option<GenericsInstance<'a>>,
     },
+    SizeofType(Type<'a>),
+    SizeofValue(Box<Expr<'a>>),
     Number(Number),
     String(String),
     Char(char),

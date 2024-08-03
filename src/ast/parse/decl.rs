@@ -1,9 +1,9 @@
 use crate::{
     ast::{
         decl::{
-            Attr, Attrs, ClauseKind, Decl, DeclKeyword, DeclKind, FuncBody, FuncParam,
-            GenericsDecl, GenericType, IntEnumBody, IntEnumParam, IntEnumType, StructBody,
-            StructParam, ThisParam, TypeClause,
+            Attr, Attrs, ClauseKind, Decl, DeclKeyword, DeclKind, FuncBody, FuncParam, GenericType,
+            GenericsDecl, IntEnumBody, IntEnumParam, IntEnumType, StructBody, StructParam,
+            ThisParam, TypeClause,
         },
         statement::{FunctionModifier, VariableModifier, VariableName},
         types::RefKind,

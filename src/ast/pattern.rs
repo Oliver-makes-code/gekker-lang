@@ -28,8 +28,5 @@ pub struct StructPattern<'a> {
 #[derive(Debug, Clone, PartialEq)]
 pub enum StructPatternKind<'a> {
     Base(Pattern<'a>),
-    Named {
-        real: &'a str,
-        name: &'a str,
-    },
+    Named { real: &'a str, name: &'a str },
 }

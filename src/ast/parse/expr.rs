@@ -238,6 +238,44 @@ fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
         TokenKind::Keyword(Keyword::Default) => ExprKind::Default,
         TokenKind::Keyword(Keyword::True) => ExprKind::Bool(true),
         TokenKind::Keyword(Keyword::False) => ExprKind::Bool(false),
+        TokenKind::Keyword(Keyword::Sizeof) => {
+            tokenizer.next()?;
+
+            let next = tokenizer.next()?;
+
+            match next.kind {
+                TokenKind::Symbol(Symbol::Less) => {
+                    let ty = parse_type(tokenizer)?;
+
+                    let next = tokenizer.next()?;
+                    let TokenKind::Symbol(Symbol::Greater) = next.kind else {
+                        return Err(ParserError::UnexpectedToken(next));
+                    };
+
+                    return Ok(Some(Expr {
+                        slice: slice.merge(next.slice),
+                        kind: ExprKind::SizeofType(ty),
+                    }));
+                }
+                TokenKind::Symbol(Symbol::ParenOpen) => {
+                    let next = tokenizer.peek(0)?;
+                    let Some(expr) = parse_expr(tokenizer)? else {
+                        return Err(ParserError::UnexpectedToken(next));
+                    };
+
+                    let next = tokenizer.next()?;
+                    let TokenKind::Symbol(Symbol::ParenClose) = next.kind else {
+                        return Err(ParserError::UnexpectedToken(next));
+                    };
+
+                    return Ok(Some(Expr {
+                        slice: slice.merge(next.slice),
+                        kind: ExprKind::SizeofValue(Box::new(expr)),
+                    }));
+                }
+                _ => return Err(ParserError::UnexpectedToken(next)),
+            }
+        }
         TokenKind::Symbol(Symbol::ParenOpen) => {
             tokenizer.next()?;
 
