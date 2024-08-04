@@ -139,9 +139,28 @@ You can also use an identifier to assign it to a variable. For example
 
 ```
 match thing {
-    Ok(1 | 2) => Print("yippee"),
-    Ok(value) => Print(value),
-    Err(_) => Print("Error!"),
+    Ok { 1 | 2 } => Print("yippee"),
+    Ok { let value } => Print(value),
+    Err { _ } => Print("Error!"),
+}
+```
+
+You cam match against structs too.
+If you don't specify a value pattern for a field, it will create a variable with a name
+
+```
+struct SomeStruct {
+    x: i32,
+    y: f32,
+    z: bool,
+}
+
+match thing {
+    SomeStruct {
+        x,
+        y: let value,
+        z: true
+    } => {}
 }
 ```
 
@@ -150,14 +169,14 @@ There's also  `if let match` and `let match else`
 ```
 // If let match
 
-if let match Err(thing) => value {
+if let match Err { let thing } => value {
     Print("Error! {}", thing);
     return;
 }
 
 // Let match else
 
-let match Ok(thing) => value else {
+let match Ok { let thing } => value else {
     Print("Error!");
     return;
 }

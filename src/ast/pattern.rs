@@ -1,4 +1,4 @@
-use crate::string::StringSlice;
+use crate::{string::StringSlice, tokenizer::token::Number};
 
 use super::{expr::GenericsInstance, IdentPath};
 
@@ -16,6 +16,9 @@ pub enum PatternKind<'a> {
         generics: GenericsInstance<'a>,
         values: Vec<StructPattern<'a>>,
     },
+    Array(Vec<Pattern<'a>>),
+    Number(Number),
+    Bool(bool),
     Discard,
 }
 
