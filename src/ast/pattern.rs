@@ -1,3 +1,5 @@
+use clang::Type;
+
 use crate::{string::StringSlice, tokenizer::token::Number};
 
 use super::{expr::GenericsInstance, IdentPath};
@@ -10,7 +12,11 @@ pub struct Pattern<'a> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum PatternKind<'a> {
-    Name(&'a str),
+    Let {
+        is_mut: bool,
+        name: &'a str,
+        ty: Option<Type<'a>>,
+    },
     Struct {
         name: IdentPath<'a>,
         generics: GenericsInstance<'a>,
@@ -25,11 +31,6 @@ pub enum PatternKind<'a> {
 #[derive(Debug, Clone, PartialEq)]
 pub struct StructPattern<'a> {
     pub slice: StringSlice<'a>,
-    pub kind: StructPatternKind<'a>,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum StructPatternKind<'a> {
-    Base(Pattern<'a>),
-    Named { real: &'a str, name: &'a str },
+    pub name: &'a str,
+    pub pat: Option<Pattern<'a>>,
 }

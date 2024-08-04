@@ -150,6 +150,7 @@ If you don't specify a value pattern for a field, it will create a variable with
 
 ```
 struct SomeStruct {
+    w: u64,
     x: i32,
     y: f32,
     z: bool,
@@ -157,8 +158,9 @@ struct SomeStruct {
 
 match thing {
     SomeStruct {
-        x,
-        y: let value,
+        w,
+        x: let value,
+        y: mut otherValue,
         z: true
     } => {}
 }
