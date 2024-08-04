@@ -52,6 +52,7 @@ pub enum ExprKind<'a> {
     Bool(bool),
     This,
     Default,
+    Nullptr,
     Discard,
 }
 

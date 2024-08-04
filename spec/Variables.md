@@ -26,3 +26,10 @@ let opt = GetOpt();
 opt?.thing; // thing's type is wrapped in Option
 opt!.thing; // None is returned
 ```
+
+You can also coalesce and cascare pointers into references.
+```
+let value: *i32 = Malloc<i32>();
+let _: ?ref i32 = ptr?;
+let _: ref i32 = ptr!; // Will return None if ptr is nullptr.
+```

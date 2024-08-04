@@ -238,6 +238,7 @@ fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
         TokenKind::Keyword(Keyword::Default) => ExprKind::Default,
         TokenKind::Keyword(Keyword::True) => ExprKind::Bool(true),
         TokenKind::Keyword(Keyword::False) => ExprKind::Bool(false),
+        TokenKind::Keyword(Keyword::Nullptr) => ExprKind::Nullptr,
         TokenKind::Keyword(Keyword::Sizeof) => {
             tokenizer.next()?;
 

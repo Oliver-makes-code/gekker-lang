@@ -68,7 +68,8 @@ pub enum Keyword {
     True,
     False,
     Default, // default
-    Sizeof,  // sizeof T
+    Sizeof,  // sizeof
+    Nullptr, // nullptr
 
     // Statements / Control flow
     For,
@@ -214,6 +215,7 @@ impl Keyword {
             "false" => Self::False,
             "default" => Self::Default,
             "sizeof" => Self::Sizeof,
+            "nullptr" => Self::Nullptr,
 
             "for" => Self::For,
             "while" => Self::While,
