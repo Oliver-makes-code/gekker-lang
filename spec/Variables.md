@@ -17,3 +17,12 @@ mut y: i32 = 2;
 static z: i32 = 3;
 const w: i32 = 4;
 ```
+
+# None coalescing and cascading
+
+```
+let opt = GetOpt();
+
+opt?.thing; // thing's type is wrapped in Option
+opt!.thing; // None is returned
+```
