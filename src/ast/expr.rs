@@ -66,8 +66,16 @@ pub struct GenericsInstance<'a> {
 pub enum AccessKind {
     /// .
     Value,
+    /// ?.
+    ValueCoalesce,
+    /// !.
+    ValueCascade,
     /// ->
     Reference,
+    /// ?->
+    ReferenceCoalesce,
+    /// !->
+    ReferenceCascade,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -118,7 +126,11 @@ impl AccessKind {
     pub fn try_parse(kind: TokenKind) -> Option<Self> {
         let kind = match kind {
             TokenKind::Symbol(Symbol::Dot) => Self::Value,
+            TokenKind::Symbol(Symbol::ValueCoalesce) => Self::ValueCascade,
+            TokenKind::Symbol(Symbol::ValueCascade) => Self::ValueCascade,
             TokenKind::Symbol(Symbol::SmallArrow) => Self::Reference,
+            TokenKind::Symbol(Symbol::ReferenceCascade) => Self::ReferenceCascade,
+            TokenKind::Symbol(Symbol::ReferenceCoalesce) => Self::ReferenceCoalesce,
             _ => return None,
         };
 

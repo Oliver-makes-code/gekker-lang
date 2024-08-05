@@ -157,16 +157,22 @@ pub enum Symbol {
     Shr,       // >>
     ShrAssign, // >>=
 
+    // Field access
+    Dot,               // .
+    ValueCoalesce,     // ?.
+    ValueCascade,      // !.
+    SmallArrow,        // ->
+    ReferenceCoalesce, // ?->
+    ReferenceCascade,  // !->
+
     // Other symbols
     BoolNot,     // !
     Colon,       // :
     Semicolon,   // ;
     Assign,      // =
     Optional,    // ?
-    Dot,         // .
     Comma,       // ,
     WideArrow,   // =>
-    SmallArrow,  // ->
     DoubleColon, // ::
     Pound,       // #
 }
@@ -241,15 +247,20 @@ impl Symbol {
             "..=" => Self::RangeTo,
             "<.." => Self::RangeFrom,
             ".." => Self::Range,
-            "." => Self::Dot,
 
             "::" => Self::DoubleColon,
             ":" => Self::Colon,
 
-            "=>" => Self::WideArrow,
+            "?." => Self::ValueCoalesce,
+            "!." => Self::ValueCascade,
+            "?->" => Self::ReferenceCoalesce,
+            "!->" => Self::ReferenceCascade,
+            "." => Self::Dot,
             "->" => Self::SmallArrow,
             "?" => Self::Optional,
             "!" => Self::BoolNot,
+
+            "=>" => Self::WideArrow,
             "," => Self::Comma,
             ";" => Self::Semicolon,
 
