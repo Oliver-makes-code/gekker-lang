@@ -1,8 +1,6 @@
-use clang::Type;
-
 use crate::{string::StringSlice, tokenizer::token::Number};
 
-use super::{expr::GenericsInstance, IdentPath};
+use super::{expr::GenericsInstance, types::Type, IdentPath};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Pattern<'a> {
