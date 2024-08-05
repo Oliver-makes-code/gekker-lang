@@ -6,11 +6,7 @@ use crate::{
     },
 };
 
-use super::{
-    decl::{IntEnumBody, IntEnumType, StructBody},
-    parse::error::ParserError,
-    IdentPath,
-};
+use super::{decl::StructBody, parse::error::ParserError, IdentPath};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Type<'a> {
@@ -62,11 +58,6 @@ pub enum TypeKind<'a> {
     },
 
     Struct(StructBody<'a>),
-    Enum(StructBody<'a>),
-    IntEnum {
-        ty: IntEnumType,
-        body: IntEnumBody<'a>,
-    },
 
     UserDefined {
         path: IdentPath<'a>,

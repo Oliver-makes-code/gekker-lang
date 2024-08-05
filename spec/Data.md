@@ -133,6 +133,31 @@ We do not have tuples, because I believe them to be an antipatterm. Having
 anyonymous data types with unnamed fields often leads to confusion. Use
 anonymous structs instead.
 
+There are no anonymous enums.
+
+```
+let x: struct { x: i32 };
+```
+
+They are instantiated using the `struct` keyword
+
+```
+let x: struct { x: i32 } = struct { x: i32 };
+```
+
+If you have an enum value with an anonymous struct, you don't need the `struct` keyword.
+
+```
+enum SomeEnum {
+    Value: struct {
+        x: i32,
+        y: f32,
+    }
+}
+
+let x = SomeEnum::Value {x: 1, y: 2.5};
+```
+
 ## Syntax sugar for language builtin non-primitives
 
 - `?T` -> `Option<T>`

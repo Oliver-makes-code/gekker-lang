@@ -1,6 +1,5 @@
 use crate::{
     ast::{
-        decl::IntEnumType,
         types::{RefKind, Type, TypeKind},
         IdentPath,
     },
@@ -10,10 +9,7 @@ use crate::{
     },
 };
 
-use super::{
-    decl::{parse_int_enum_body, parse_struct_body},
-    error::ParserError,
-};
+use super::{decl::parse_struct_body, error::ParserError};
 
 pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserError<'a>> {
     let peek = tokenizer.peek(0)?;
@@ -192,32 +188,6 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
             return Ok(Type {
                 slice: start.merge(body.slice),
                 kind: TypeKind::Struct(body),
-            });
-        }
-        TokenKind::Keyword(Keyword::Enum) => {
-            tokenizer.next()?;
-            let start = peek.slice;
-
-            if let TokenKind::Symbol(Symbol::Colon) = tokenizer.peek(0)?.kind {
-                tokenizer.next()?;
-                let next = tokenizer.next()?;
-                let Some(ty) = IntEnumType::from(next.kind.clone()) else {
-                    return Err(ParserError::UnexpectedToken(next));
-                };
-
-                let body = parse_int_enum_body(tokenizer)?;
-
-                return Ok(Type {
-                    slice: start.merge(body.slice),
-                    kind: TypeKind::IntEnum { ty, body },
-                });
-            }
-
-            let body = parse_struct_body(tokenizer)?;
-
-            return Ok(Type {
-                slice: start.merge(body.slice),
-                kind: TypeKind::Enum(body),
             });
         }
         _ => return Err(ParserError::UnexpectedToken(peek)),
