@@ -21,8 +21,16 @@ pub enum PatternKind<'a> {
         values: Vec<StructPattern<'a>>,
     },
     Array(Vec<Pattern<'a>>),
+    Or {
+        lhs: Box<Pattern<'a>>,
+        rhs: Box<Pattern<'a>>,
+    },
     Number(Number),
     Bool(bool),
+    String(String),
+    Char(char),
+    Invalid,
+    Nullptr,
     Discard,
 }
 

@@ -22,73 +22,36 @@ trait Copy {
 We our version of operator overloads are with Operator Traits. Functions for
 operator traits must always be `const func`s.
 
-The specifics of Operator Traits are subject to change.
+The specifics of operator traits are subject to change.
+
+Operator traits use underscores to determine the semantics of the operation. For example, `_+_` is addition, `~_` is bitwise not, `_!` is none/error cascading, etc.
+
+Here's some operator traits and their signatures
+
+- `_+_<T>` -> `Add(this, other: T): This;`
+- `_-_<T>` -> `Sub(this, other: T): This;`
+- `_*_<T>` -> `Mul(this, other: T): This;`
+- `_/_<T>` -> `Div(this, other: T): This;`
+- `_%_<T>` -> `Rem(this, other: T): This;`
+- `!_` -> `BoolNot(this): bool;`
+
+And some special-case operator traits
 
 ```
-impl operator +<Vec3, Vec3> for Vec3 {
-    const func Add(lhs: Vec3, rhs: Vec3): Vec3
-        => Vec3 {
-            x: lhs.x + rhs.x,
-            y: lhs.y + rhs.y,
-            z: lhs.z + rhs.z,
-        };
+where TOk; TErr;
+trait operator _! {
+    const func IsOk(this): bool;
+    const func UnwrapOk(this): TOk;
+    const func UnwrapErr(this): TErr;
 }
+
+// Used like
+
+let _ = thing!;
+
+// Turns into
+if !thing.IsOk() {
+    return Err(thing.UnwrapErr());
+}
+let _ = thing.UnwrapOk();
 ```
-
-Here's a list of operator traits and their signatures
-
-- `+ <TLhs, TRhs>` -> `Add(lhs: TLhs, rhs: TRhs): This`
-- `- <TLhs, TRhs>` -> `Sub(lhs: TLhs, rhs: TRhs): This`
-- `* <TLhs, TRhs>` -> `Mul(lhs: TLhs, rhs: TRhs): This`
-- `/ <TLhs, TRhs>` -> `Div(lhs: TLhs, rhs: TRhs): This`
-- `% <TLhs, TRhs>` -> `Rem(lhs: TLhs, rhs: TRhs): This`
-- `> <TLhs, TRhs>` -> `Greater(lhs: TLhs, rhs: TRhs): This`
-- `< <TLhs, TRhs>` -> `Less(lhs: TLhs, rhs: TRhs): This`
-- `& <TLhs, TRhs>` -> `BitAnd(lhs: TLhs, rhs: TRhs): This`
-- `| <TLhs, TRhs>` -> `BitOr(lhs: TLhs, rhs: TRhs): This`
-- `^ <TLhs, TRhs>` -> `BitXor(lhs: TLhs, rhs: TRhs): This`
-- `~ <TLhs, TRhs>` -> `BitNot(lhs: TLhs, rhs: TRhs): This`
-- `>= <TLhs, TRhs>` -> `GreaterEqual(lhs: TLhs, rhs: TRhs): This`
-    - Can only be implemented on `bool` type.
-- `<= <TLhs, TRhs>` -> `LessEqual(lhs: TLhs, rhs: TRhs): This`
-    - Can only be implemented on `bool` type.
-- `== <TLhs, TRhs>` -> `Equal(lhs: TLhs, rhs: TRhs): This`
-    - Can only be implemented on `bool` type.
-- `!= <TLhs, TRhs>` -> `NotEqual(lhs: TLhs, rhs: TRhs): This`
-    - Can only be implemented on `bool` type.
-- `&& <TLhs, TRhs>` -> `BoolAnd(lhs: TLhs, rhs: TRhs): This`
-    - Can only be implemented on `bool` type.
-- `|| <TLhs, TRhs>` -> `BoolOr(lhs: TLhs, rhs: TRhs): This`
-    - Can only be implemented on `bool` type.
-- `^^ <TLhs, TRhs>` -> `BoolXor(lhs: TLhs, rhs: TRhs): This`
-    - Can only be implemented on `bool` type.
-- `! <TValue>` -> `BoolNot(value: TValue): This`
-- `+ <TValue>` -> `UnaryPlus(value: TValue): This`
-- `- <TValue>` -> `UnaryMinus(value: TValue): This`
-- `=` -> `Copy(ref this, other: ref mut This)`
-- `[] <TIndex, TResult>` -> `Index(ref this, index: TIndex): TResult`
-
-Some other special-case operators
-
-- `..`
-    ```
-    where
-        TItem
-    trait operator .. {
-        const func Range(pair: Pair<TItem, TItem>): This;
-        const func Next(ref mut this): ?TItem;
-        const func Current(ref this): TItem;
-        const func Min(ref this): TItem;
-        const func Max(ref this): TItem;
-    }
-
-    // Automtaically implements
-    where
-        TItem,
-        TRange : operator ..<TItem>
-    impl Into<TRange> for Pair<TItem, TItem> {
-        const func Into(this): TRange {
-            return TRange.Range(this);
-        }
-    }
-    ```

@@ -62,7 +62,7 @@ pub enum Keyword {
     F32,
     F64,
 
-    // Values
+    // Values / Pattern matching
     ThisValue, // this
     Discard,   // _
     True,
@@ -70,6 +70,7 @@ pub enum Keyword {
     Default, // default
     Sizeof,  // sizeof
     Nullptr, // nullptr
+    Invalid, // invalid
 
     // Statements / Control flow
     For,
@@ -222,6 +223,7 @@ impl Keyword {
             "default" => Self::Default,
             "sizeof" => Self::Sizeof,
             "nullptr" => Self::Nullptr,
+            "invalid" => Self::Invalid,
 
             "for" => Self::For,
             "while" => Self::While,
