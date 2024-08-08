@@ -129,6 +129,16 @@ enum SomeEnum: u32 {
 }
 ```
 
+When assigning fields in a struct initializer, you can use `=`.
+
+```
+let x: Vec3 = Vec3 {
+    x = 1,
+    y = 2,
+    z = 3,
+};
+```
+
 We do not have tuples, because I believe them to be an antipatterm. Having
 anyonymous data types with unnamed fields often leads to confusion. Use
 anonymous structs instead.
@@ -142,7 +152,7 @@ let x: struct { x: i32 };
 They are instantiated using the `struct` keyword
 
 ```
-let x: struct { x: i32 } = struct { x: i32 };
+let x: struct { x: i32 } = struct { x = i32 };
 ```
 
 If you have an enum value with an anonymous struct, you don't need the `struct` keyword.

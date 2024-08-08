@@ -6,7 +6,7 @@ We have namespaces, like in C++.
 namespace Std;
 
 where
-    T : Sized
+    T : Sized;
 func Malloc(): *T;
 ```
 

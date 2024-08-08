@@ -140,7 +140,7 @@ You can also use an identifier to assign it to a variable. For example
 ```
 match thing {
     Ok { 1 | 2 } => Print("yippee"),
-    Ok { let value } => Print(value),
+    Ok { value } => Print(value),
     Err { _ } => Print("Error!"),
 }
 ```
@@ -159,9 +159,9 @@ struct SomeStruct {
 match thing {
     SomeStruct {
         w,
-        x: let value,
-        y: mut otherValue,
-        z: true
+        x = value,
+        y = mut otherValue,
+        z = true
     } => {}
 }
 ```
@@ -171,14 +171,14 @@ There's also  `if let match` and `let match else`
 ```
 // If let match
 
-if let match Err { let thing } => value {
+if let match Err { thing } => value {
     Print("Error! {}", thing);
     return;
 }
 
 // Let match else
 
-let match Ok { let thing } => value else {
+let match Ok { thing } => value else {
     Print("Error!");
     return;
 }
@@ -188,5 +188,5 @@ Print("{}", thing);
 `return if` also works with this
 
 ```
-return err if let match Err(err) => value;
+return err if let match Err { err } => value;
 ```

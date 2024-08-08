@@ -6,7 +6,7 @@ Here are a couple code examples that may or may not work
 
 ```
 where
-    T : Compare<T>
+    T : Compare<T>;
 func BubbleSort(arr: ref mut [T]) {
     for i in 0..(arr.Size - 1) {
         mut swapped = false;
