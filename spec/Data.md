@@ -132,11 +132,26 @@ enum SomeEnum: u32 {
 When assigning fields in a struct initializer, you can use `=`.
 
 ```
-let x: Vec3 = Vec3 {
+let x = Vec3 {
     x = 1,
     y = 2,
     z = 3,
 };
+```
+
+You can also merge the values of other instances, using the `...` symbol.
+
+```
+let x = Vec3 {
+    y = 5,
+    ...other
+};
+```
+
+You can also do ordered initialization, though this is discouraged in more complex structs.
+
+```
+let x = Vec3 { 1, 2, 3 };
 ```
 
 We do not have tuples, because I believe them to be an antipatterm. Having

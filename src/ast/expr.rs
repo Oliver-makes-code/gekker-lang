@@ -57,6 +57,25 @@ pub enum ExprKind<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct Initializer<'a> {
+    pub slice: StringSlice<'a>,
+    pub kind: InitializerKind<'a>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum InitializerKind<'a> {
+    Single(Expr<'a>),
+    List(Vec<InitializerValue<'a>>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct InitializerValue<'a> {
+    pub slice: StringSlice<'a>,
+    pub name: &'a str,
+    pub value: Expr<'a>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct GenericsInstance<'a> {
     pub slice: StringSlice<'a>,
     pub params: Vec<Type<'a>>,

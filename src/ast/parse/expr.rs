@@ -1,6 +1,6 @@
 use crate::{
     ast::{
-        expr::{AccessKind, BinOp, Expr, ExprKind, GenericsInstance, UnaryOp},
+        expr::{AccessKind, BinOp, Expr, ExprKind, GenericsInstance, Initializer, UnaryOp},
         parse::types::parse_type,
         IdentPath,
     },
@@ -377,6 +377,14 @@ pub fn parse_generics_instance<'a>(
         slice: start.merge(tokenizer.next()?.slice),
         params,
     }));
+}
+
+pub fn parse_initializer<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Initializer<'a>>, ParserError<'a>> {
+    let peek = tokenizer.peek(0)?;
+    let TokenKind::Symbol(Symbol::BraceOpen) = peek.kind else {
+        return Ok(None);
+    };
+    todo!()
 }
 
 #[cfg(test)]
