@@ -1,6 +1,6 @@
 use crate::{string::StringSlice, tokenizer::token::Number};
 
-use super::{expr::GenericsInstance, types::Type, IdentPath};
+use super::{expr::GenericsInstance, IdentPath};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Pattern<'a> {
@@ -10,21 +10,16 @@ pub struct Pattern<'a> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum PatternKind<'a> {
-    Let {
+    Value {
         is_mut: bool,
         name: &'a str,
-        ty: Option<Type<'a>>,
     },
-    Struct {
+    Initializer {
         name: IdentPath<'a>,
-        generics: GenericsInstance<'a>,
-        values: Vec<StructPattern<'a>>,
+        generics: Vec<GenericsInstance<'a>>,
+        list: InitializerPattern<'a>,
     },
-    Array(Vec<Pattern<'a>>),
-    Or {
-        lhs: Box<Pattern<'a>>,
-        rhs: Box<Pattern<'a>>,
-    },
+    Or(Vec<Pattern<'a>>),
     Number(Number),
     Bool(bool),
     String(String),
@@ -35,8 +30,20 @@ pub enum PatternKind<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct StructPattern<'a> {
+pub struct InitializerPattern<'a> {
+    pub slice: StringSlice<'a>,
+    pub kind: InitializerPatternKind<'a>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum InitializerPatternKind<'a> {
+    Expr(Vec<Pattern<'a>>),
+    Named(Vec<NamedInitializerPattern<'a>>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct NamedInitializerPattern<'a> {
     pub slice: StringSlice<'a>,
     pub name: &'a str,
-    pub pat: Option<Pattern<'a>>,
+    pub value: Pattern<'a>,
 }

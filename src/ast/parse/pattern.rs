@@ -1,7 +1,10 @@
 use crate::{
-    ast::pattern::{Pattern, PatternKind},
+    ast::{
+        pattern::{Pattern, PatternKind},
+        IdentPath,
+    },
     tokenizer::{
-        token::{Keyword, TokenKind},
+        token::{Keyword, Symbol, TokenKind},
         Tokenizer,
     },
 };
@@ -9,6 +12,36 @@ use crate::{
 use super::error::ParserError;
 
 type PatternResult<'a> = Result<Pattern<'a>, ParserError<'a>>;
+
+pub fn parse_pattern<'a>(tokenizer: &mut Tokenizer<'a>) -> PatternResult<'a> {
+    let base = parse_value(tokenizer)?;
+
+    let peek = tokenizer.peek(0)?;
+    let TokenKind::Symbol(Symbol::BitOr) = peek.kind else {
+        return Ok(base);
+    };
+    tokenizer.next()?;
+
+    let start = base.slice;
+
+    let mut values = vec![base];
+
+    loop {
+        let pattern = parse_value(tokenizer)?;
+        let end = pattern.slice.clone();
+
+        values.push(pattern);
+
+        let peek = tokenizer.peek(0)?;
+        let TokenKind::Symbol(Symbol::BitOr) = peek.kind else {
+            return Ok(Pattern {
+                slice: start.merge(end),
+                kind: PatternKind::Or(values),
+            });
+        };
+        tokenizer.next()?;
+    }
+}
 
 fn parse_value<'a>(tokenizer: &mut Tokenizer<'a>) -> PatternResult<'a> {
     let peek = tokenizer.peek(0)?;
@@ -24,14 +57,14 @@ fn parse_value<'a>(tokenizer: &mut Tokenizer<'a>) -> PatternResult<'a> {
             tokenizer.next()?;
             return Ok(Pattern {
                 slice: peek.slice,
-                kind: PatternKind::Discard,
+                kind: PatternKind::Nullptr,
             });
         }
         TokenKind::Keyword(Keyword::Invalid) => {
             tokenizer.next()?;
             return Ok(Pattern {
                 slice: peek.slice,
-                kind: PatternKind::Discard,
+                kind: PatternKind::Invalid,
             });
         }
         TokenKind::Char(c) => {
@@ -69,7 +102,38 @@ fn parse_value<'a>(tokenizer: &mut Tokenizer<'a>) -> PatternResult<'a> {
                 kind: PatternKind::Bool(false),
             });
         }
-        _ => {}
+        TokenKind::Keyword(Keyword::Mut) => {
+            tokenizer.next()?;
+            let next = tokenizer.next()?;
+            let TokenKind::Identifier(name) = next.kind else {
+                return Err(ParserError::UnexpectedToken(next));
+            };
+
+            return Ok(Pattern {
+                slice: peek.slice.merge(next.slice),
+                kind: PatternKind::Value { is_mut: true, name },
+            });
+        }
+        TokenKind::Identifier(name) => {
+            let slice = peek.slice;
+            let peek = tokenizer.peek(1)?;
+            if let TokenKind::Symbol(Symbol::DoubleColon | Symbol::BraceOpen) = peek.kind {
+                let Some(path) = IdentPath::try_parse(tokenizer)? else {
+                    return Err(ParserError::UnexpectedToken(peek));
+                };
+
+                todo!("initializer list pattern");
+            }
+            tokenizer.next()?;
+
+            return Ok(Pattern {
+                slice,
+                kind: PatternKind::Value {
+                    is_mut: false,
+                    name,
+                },
+            });
+        }
+        a => todo!("{a:?}"),
     }
-    todo!()
 }

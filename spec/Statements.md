@@ -133,11 +133,9 @@ match (thing) {
 ```
 
 You cam match against structs too.
-If you don't specify a value pattern for a field, it will create a variable with a name
 
 ```
 struct SomeStruct {
-    w: u64,
     x: i32,
     y: f32,
     z: bool,
@@ -145,7 +143,6 @@ struct SomeStruct {
 
 match (thing) {
     SomeStruct {
-        .w,
         .x = value,
         .y = mut otherValue,
         .z = true

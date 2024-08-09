@@ -48,3 +48,11 @@ The root namespace of your package is always the name of your package. So a
 package named `Json` would have it's root namespace be `Json`. It is implicitly
 defined, so you don't need to do `namespace Json::Whatever`, only
 `namespace Whatever`
+
+You can also have "namespace blocks", which are sub-namespaces.
+
+```
+namespace Thing {
+    //...
+}
+```
