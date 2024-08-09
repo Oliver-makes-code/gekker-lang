@@ -92,9 +92,19 @@ fn parse_if_statement<'a>(
     let start = peek.slice;
     tokenizer.next()?;
 
+    let next = tokenizer.next()?;
+    let TokenKind::Symbol(Symbol::ParenOpen) = next.kind else {
+        return Err(ParserError::UnexpectedToken(next));
+    };
+
     let peek = tokenizer.peek(0)?;
     let Some(expr) = parse_expr(tokenizer)? else {
         return Err(ParserError::UnexpectedToken(peek));
+    };
+
+    let next = tokenizer.next()?;
+    let TokenKind::Symbol(Symbol::ParenClose) = next.kind else {
+        return Err(ParserError::UnexpectedToken(next));
     };
 
     let peek = tokenizer.peek(0)?;
@@ -134,10 +144,22 @@ fn parse_else_block<'a>(
 
     if let TokenKind::Keyword(Keyword::If) = peek.kind {
         tokenizer.next()?;
+
+        let next = tokenizer.next()?;
+        let TokenKind::Symbol(Symbol::ParenOpen) = next.kind else {
+            return Err(ParserError::UnexpectedToken(next));
+        };
+
         let peek = tokenizer.peek(0)?;
         let Some(expr) = parse_expr(tokenizer)? else {
             return Err(ParserError::UnexpectedToken(peek));
         };
+
+        let next = tokenizer.next()?;
+        let TokenKind::Symbol(Symbol::ParenClose) = next.kind else {
+            return Err(ParserError::UnexpectedToken(next));
+        };
+
         let peek = tokenizer.peek(0)?;
         let Some(block) = parse_block(tokenizer)? else {
             return Err(ParserError::UnexpectedToken(peek));

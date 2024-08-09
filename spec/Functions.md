@@ -58,9 +58,23 @@ Here's a couple examples
 
 ```
 func => 1 // a lambda that always returns 1
+
+func() => 1 // same as previous
+
+func[] => 1 // same as previous
+
+func()[] => 1 // same as previous
+
 func(x) => x + 1 // a lambda that takes in x and returns x + 1
+
+func(x)[] => x + 1 // same as previous
+
 func[x] => x + 1 // a lambda that captures x and returns x + 1
+
+func()[x] => x + 1 // same as previous
+
 func(x)[y] => x + y // a lambda that takes in x, captures y, and returns x + y
+
 func {} // a lambda with a block
 ```
 

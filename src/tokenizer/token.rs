@@ -176,6 +176,7 @@ pub enum Symbol {
     WideArrow,   // =>
     DoubleColon, // ::
     Pound,       // #
+    Rest,        // ...
 }
 
 impl Keyword {
@@ -245,6 +246,8 @@ impl Keyword {
 impl Symbol {
     pub fn from<'a>(parser: &mut StringParser<'a>) -> Option<(StringSlice<'a>, Self)> {
         symbol_match!(parser,
+            "..." => Self::Rest,
+
             "<..=" => Self::RangeFromTo,
             "..=" => Self::RangeTo,
             "<.." => Self::RangeFrom,

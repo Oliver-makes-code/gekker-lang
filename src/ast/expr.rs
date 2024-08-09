@@ -44,6 +44,11 @@ pub enum ExprKind<'a> {
         path: IdentPath<'a>,
         generics: Option<GenericsInstance<'a>>,
     },
+    Initializer {
+        path: IdentPath<'a>,
+        generics: Option<GenericsInstance<'a>>,
+        list: InitializerList<'a>,
+    },
     SizeofType(Type<'a>),
     SizeofValue(Box<Expr<'a>>),
     Number(Number),
@@ -57,19 +62,28 @@ pub enum ExprKind<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Initializer<'a> {
+pub struct InitializerList<'a> {
     pub slice: StringSlice<'a>,
     pub kind: InitializerKind<'a>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum InitializerKind<'a> {
-    Single(Expr<'a>),
-    List(Vec<InitializerValue<'a>>),
+    Expr(Vec<Expr<'a>>),
+    Named {
+        values: Vec<NamedInitializer<'a>>,
+        default: Option<DefaultedInitializer<'a>>,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct InitializerValue<'a> {
+pub struct DefaultedInitializer<'a> {
+    pub slice: StringSlice<'a>,
+    pub value: Box<Expr<'a>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct NamedInitializer<'a> {
     pub slice: StringSlice<'a>,
     pub name: &'a str,
     pub value: Expr<'a>,

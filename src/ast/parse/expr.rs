@@ -1,6 +1,9 @@
 use crate::{
     ast::{
-        expr::{AccessKind, BinOp, Expr, ExprKind, GenericsInstance, Initializer, UnaryOp},
+        expr::{
+            AccessKind, BinOp, DefaultedInitializer, Expr, ExprKind, GenericsInstance,
+            InitializerKind, InitializerList, NamedInitializer, UnaryOp,
+        },
         parse::types::parse_type,
         IdentPath,
     },
@@ -318,6 +321,17 @@ fn parse_ident<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
         path.slice
     };
 
+    if let Some(list) = parse_initializer_list(tokenizer)? {
+        return Ok(Some(Expr {
+            slice: slice.merge(list.slice.clone()),
+            kind: ExprKind::Initializer {
+                path,
+                generics,
+                list,
+            },
+        }));
+    }
+
     return Ok(Some(Expr {
         slice,
         kind: ExprKind::Variable { path, generics },
@@ -379,12 +393,121 @@ pub fn parse_generics_instance<'a>(
     }));
 }
 
-pub fn parse_initializer<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Initializer<'a>>, ParserError<'a>> {
+pub fn parse_initializer_list<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<InitializerList<'a>>, ParserError<'a>> {
     let peek = tokenizer.peek(0)?;
     let TokenKind::Symbol(Symbol::BraceOpen) = peek.kind else {
         return Ok(None);
     };
+    tokenizer.next()?;
+    let start = peek.slice;
+
+    let peek = tokenizer.peek(0)?;
+    if let TokenKind::Symbol(Symbol::Dot) = peek.kind {
+        let mut values = vec![];
+
+        loop {
+            let Some(init) = parse_named_initializer(tokenizer)? else {
+                break;
+            };
+            values.push(init);
+
+            let peek = tokenizer.peek(0)?;
+            match peek.kind {
+                TokenKind::Symbol(Symbol::Comma) => {
+                    tokenizer.next()?;
+                    let peek = tokenizer.peek(0)?;
+                    if let TokenKind::Symbol(Symbol::BraceClose | Symbol::Rest) = peek.kind {
+                        break;
+                    }
+                }
+                TokenKind::Symbol(Symbol::BraceClose | Symbol::Rest) => {
+                    break;
+                }
+                _ => return Err(ParserError::UnexpectedToken(peek)),
+            }
+        }
+
+        let default = parse_defaulted_initializer(tokenizer)?;
+
+        let peek = tokenizer.peek(0)?;
+        if default.is_some()
+            && let TokenKind::Symbol(Symbol::Comma) = peek.kind
+        {
+            tokenizer.next()?;
+        }
+
+        let next = tokenizer.next()?;
+        let TokenKind::Symbol(Symbol::BraceClose) = next.kind else {
+            return Err(ParserError::UnexpectedToken(next));
+        };
+
+        return Ok(Some(InitializerList {
+            slice: start.merge(next.slice),
+            kind: InitializerKind::Named { values, default },
+        }));
+    }
+
+    // let values = vec![];
+    // loop {
+
+    // }
+
     todo!()
+}
+
+fn parse_defaulted_initializer<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<DefaultedInitializer<'a>>, ParserError<'a>> {
+    let peek = tokenizer.peek(0)?;
+    let TokenKind::Symbol(Symbol::Rest) = peek.kind else {
+        return Ok(None);
+    };
+    tokenizer.next()?;
+    let start = peek.slice;
+
+    let peek = tokenizer.peek(0)?;
+    let Some(value) = parse_expr(tokenizer)? else {
+        return Err(ParserError::UnexpectedToken(peek));
+    };
+
+    return Ok(Some(DefaultedInitializer {
+        slice: start.merge(value.slice),
+        value: Box::new(value),
+    }));
+}
+
+fn parse_named_initializer<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<NamedInitializer<'a>>, ParserError<'a>> {
+    let peek = tokenizer.peek(0)?;
+    let TokenKind::Symbol(Symbol::Dot) = peek.kind else {
+        return Ok(None);
+    };
+    tokenizer.next()?;
+    let start = peek.slice;
+
+    let next = tokenizer.next()?;
+    let TokenKind::Identifier(name) = next.kind else {
+        return Err(ParserError::UnexpectedToken(next));
+    };
+
+    let next = tokenizer.next()?;
+    let TokenKind::Symbol(Symbol::Assign) = next.kind else {
+        return Err(ParserError::UnexpectedToken(next));
+    };
+
+    let peek = tokenizer.peek(0)?;
+    let Some(value) = parse_expr(tokenizer)? else {
+        return Err(ParserError::UnexpectedToken(peek));
+    };
+
+    return Ok(Some(NamedInitializer {
+        slice: start.merge(value.slice),
+        name,
+        value,
+    }));
 }
 
 #[cfg(test)]
