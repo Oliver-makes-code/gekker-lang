@@ -133,9 +133,9 @@ When assigning fields in a struct initializer, you can use `=`.
 
 ```
 let x = Vec3 {
-    x = 1,
-    y = 2,
-    z = 3,
+    .x = 1,
+    .y = 2,
+    .z = 3,
 };
 ```
 
@@ -143,7 +143,7 @@ You can also merge the values of other instances, using the `...` symbol.
 
 ```
 let x = Vec3 {
-    y = 5,
+    .y = 5,
     ...other
 };
 ```
@@ -167,7 +167,7 @@ let x: struct { x: i32 };
 They are instantiated using the `struct` keyword
 
 ```
-let x: struct { x: i32 } = struct { x = i32 };
+let x: struct { x: i32 } = struct { .x = i32 };
 ```
 
 If you have an enum value with an anonymous struct, you don't need the `struct` keyword.
@@ -180,7 +180,7 @@ enum SomeEnum {
     }
 }
 
-let x = SomeEnum::Value {x: 1, y: 2.5};
+let x = SomeEnum::Value { .x: 1, .y: 2.5 };
 ```
 
 ## Syntax sugar for language builtin non-primitives

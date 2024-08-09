@@ -158,10 +158,10 @@ struct SomeStruct {
 
 match thing {
     SomeStruct {
-        w,
-        x = value,
-        y = mut otherValue,
-        z = true
+        .w,
+        .x = value,
+        .y = mut otherValue,
+        .z = true
     } => {}
 }
 ```
