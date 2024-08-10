@@ -25,22 +25,40 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
     if let Some(idents) = IdentPath::try_parse(tokenizer)? {
         let start = idents.slice;
         let peek = tokenizer.peek(0)?;
-        if let TokenKind::Symbol(Symbol::Less) = peek.kind {
-            let mut peek = peek;
+        if let TokenKind::Symbol(Symbol::Colon) = peek.kind {
+            tokenizer.next()?;
 
-            let mut params = vec![];
+            let next = tokenizer.next()?;
+            let TokenKind::Symbol(Symbol::Less) = next.kind else {
+                return Err(ParserError::UnexpectedToken(next));
+            };
 
-            while peek.kind != TokenKind::Symbol(Symbol::Greater) {
-                tokenizer.next()?;
+            let peek = tokenizer.peek(0)?;
 
-                params.push(parse_type(tokenizer)?);
+            let TokenKind::Symbol(Symbol::Greater) = peek.kind else {
+                let mut params = vec![];
+                
+                loop {
+                    let ty = parse_type(tokenizer)?;
+                    params.push(ty);
 
-                peek = tokenizer.peek(0)?;
-
-                let TokenKind::Symbol(Symbol::Comma | Symbol::Greater) = peek.kind else {
-                    return Err(ParserError::UnexpectedToken(peek));
-                };
-            }
+                    let next = tokenizer.next()?;
+                    match next.kind {
+                        TokenKind::Symbol(Symbol::Comma) => {},
+                        TokenKind::Symbol(Symbol::Greater) => {
+                            return Ok(Type {
+                                slice: start.merge(next.slice),
+                                kind: TypeKind::UserDefined {
+                                    path: idents,
+                                    generics: params,
+                                },
+                            });
+                        },
+                        _ => return Err(ParserError::UnexpectedToken(next)),
+                    }
+                }
+            };
+            tokenizer.next()?;
 
             let end = peek.slice;
 
@@ -48,7 +66,7 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
                 slice: start.merge(end),
                 kind: TypeKind::UserDefined {
                     path: idents,
-                    generics: params,
+                    generics: vec![],
                 },
             });
         }
