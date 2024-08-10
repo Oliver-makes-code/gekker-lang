@@ -128,7 +128,9 @@ fn parse_value<'a>(tokenizer: &mut Tokenizer<'a>) -> PatternResult<'a> {
         TokenKind::Identifier(name) => {
             let slice = peek.slice;
             let peek = tokenizer.peek(1)?;
-            if let TokenKind::Symbol(Symbol::DoubleColon | Symbol::Colon | Symbol::BraceOpen) = peek.kind {
+            if let TokenKind::Symbol(Symbol::DoubleColon | Symbol::Colon | Symbol::BraceOpen) =
+                peek.kind
+            {
                 let Some(name) = IdentPath::try_parse(tokenizer)? else {
                     return Err(ParserError::UnexpectedToken(peek));
                 };
@@ -137,7 +139,14 @@ fn parse_value<'a>(tokenizer: &mut Tokenizer<'a>) -> PatternResult<'a> {
 
                 let list = parse_initializer_pattern(tokenizer)?;
 
-                return Ok(Pattern { slice: slice.merge(list.slice), kind: PatternKind::Initializer { name, generics, list } })
+                return Ok(Pattern {
+                    slice: slice.merge(list.slice),
+                    kind: PatternKind::Initializer {
+                        name,
+                        generics,
+                        list,
+                    },
+                });
             }
             tokenizer.next()?;
 

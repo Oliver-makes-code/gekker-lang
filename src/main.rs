@@ -1,8 +1,6 @@
 #![feature(decl_macro, let_chains, assert_matches, box_patterns)]
 
-use std::marker::PhantomData;
-
-use ast::parse::{error::ParserError, expr::parse_initializer_list, pattern::parse_pattern};
+use ast::parse::{error::ParserError, pattern::parse_pattern};
 use tokenizer::Tokenizer;
 
 pub mod ast;

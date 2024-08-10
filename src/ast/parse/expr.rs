@@ -8,7 +8,7 @@ use crate::{
         IdentPath,
     },
     tokenizer::{
-        token::{Keyword, Symbol, Token, TokenKind},
+        token::{Keyword, Symbol, TokenKind},
         Tokenizer,
     },
 };
