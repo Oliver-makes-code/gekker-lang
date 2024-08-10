@@ -71,6 +71,13 @@ fn parse_value<'a>(tokenizer: &mut Tokenizer<'a>) -> PatternResult<'a> {
                 kind: PatternKind::Invalid,
             });
         }
+        TokenKind::Keyword(Keyword::Default) => {
+            tokenizer.next()?;
+            return Ok(Pattern {
+                slice: peek.slice,
+                kind: PatternKind::Default,
+            });
+        }
         TokenKind::Char(c) => {
             tokenizer.next()?;
             return Ok(Pattern {

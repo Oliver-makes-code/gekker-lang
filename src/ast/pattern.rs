@@ -27,6 +27,7 @@ pub enum PatternKind<'a> {
     Invalid,
     Nullptr,
     Discard,
+    Default,
 }
 
 #[derive(Debug, Clone, PartialEq)]
