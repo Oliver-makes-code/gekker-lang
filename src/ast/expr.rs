@@ -74,6 +74,7 @@ pub enum InitializerKind<'a> {
         values: Vec<NamedInitializer<'a>>,
         default: Option<DefaultedInitializer<'a>>,
     },
+    Empty,
 }
 
 #[derive(Debug, Clone, PartialEq)]

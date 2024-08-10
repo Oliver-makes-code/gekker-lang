@@ -7,6 +7,7 @@ extremely opinionated.
 
 ## Core Principles
 
-- I want the language to be unambiguous, for both the reader and compiler.
+- The language should be unambiguous, for both the reader and compiler.
     Syntax should feel close to "plain english"
-- I want language features to encourage the way in which I program
+- Language features should encourage the way in which I program
+- The parser should run with as little lookahead as possible. The syntax should be without context wherever possible.

@@ -1,6 +1,6 @@
 use crate::{
     ast::{
-        pattern::{Pattern, PatternKind},
+        pattern::{InitializerPattern, NamedInitializerPattern, Pattern, PatternKind},
         IdentPath,
     },
     tokenizer::{
@@ -136,4 +136,31 @@ fn parse_value<'a>(tokenizer: &mut Tokenizer<'a>) -> PatternResult<'a> {
         }
         a => todo!("{a:?}"),
     }
+}
+
+fn parse_initializer<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<InitializerPattern<'a>, ParserError<'a>> {
+    let next = tokenizer.next()?;
+    let TokenKind::Symbol(Symbol::BraceOpen) = next.kind else {
+        return Err(ParserError::UnexpectedToken(next));
+    };
+
+    todo!()
+}
+
+fn parse_named_initializer<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<NamedInitializerPattern<'a>, ParserError<'a>> {
+    let next = tokenizer.next()?;
+    let TokenKind::Symbol(Symbol::Dot) = next.kind else {
+        return Err(ParserError::UnexpectedToken(next));
+    };
+
+    let next = tokenizer.next()?;
+    let TokenKind::Identifier(name) = next.kind else {
+        return Err(ParserError::UnexpectedToken(next));
+    };
+
+    todo!()
 }
