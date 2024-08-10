@@ -16,7 +16,7 @@ pub enum PatternKind<'a> {
     },
     Initializer {
         name: IdentPath<'a>,
-        generics: Vec<GenericsInstance<'a>>,
+        generics: Option<GenericsInstance<'a>>,
         list: InitializerPattern<'a>,
     },
     Or(Vec<Pattern<'a>>),
@@ -39,6 +39,7 @@ pub struct InitializerPattern<'a> {
 pub enum InitializerPatternKind<'a> {
     Expr(Vec<Pattern<'a>>),
     Named(Vec<NamedInitializerPattern<'a>>),
+    Empty,
 }
 
 #[derive(Debug, Clone, PartialEq)]

@@ -1,6 +1,9 @@
 use crate::{
     ast::{
-        pattern::{InitializerPattern, NamedInitializerPattern, Pattern, PatternKind},
+        pattern::{
+            InitializerPattern, InitializerPatternKind, NamedInitializerPattern, Pattern,
+            PatternKind,
+        },
         IdentPath,
     },
     tokenizer::{
@@ -9,7 +12,7 @@ use crate::{
     },
 };
 
-use super::error::ParserError;
+use super::{error::ParserError, expr::parse_generics_instance};
 
 type PatternResult<'a> = Result<Pattern<'a>, ParserError<'a>>;
 
@@ -43,6 +46,7 @@ pub fn parse_pattern<'a>(tokenizer: &mut Tokenizer<'a>) -> PatternResult<'a> {
     }
 }
 
+/// TODO: Parse array initializer
 fn parse_value<'a>(tokenizer: &mut Tokenizer<'a>) -> PatternResult<'a> {
     let peek = tokenizer.peek(0)?;
     match peek.kind {
@@ -117,12 +121,16 @@ fn parse_value<'a>(tokenizer: &mut Tokenizer<'a>) -> PatternResult<'a> {
         TokenKind::Identifier(name) => {
             let slice = peek.slice;
             let peek = tokenizer.peek(1)?;
-            if let TokenKind::Symbol(Symbol::DoubleColon | Symbol::BraceOpen) = peek.kind {
-                let Some(path) = IdentPath::try_parse(tokenizer)? else {
+            if let TokenKind::Symbol(Symbol::DoubleColon | Symbol::Colon | Symbol::BraceOpen) = peek.kind {
+                let Some(name) = IdentPath::try_parse(tokenizer)? else {
                     return Err(ParserError::UnexpectedToken(peek));
                 };
 
-                todo!("initializer list pattern");
+                let generics = parse_generics_instance(tokenizer)?;
+
+                let list = parse_initializer_pattern(tokenizer)?;
+
+                return Ok(Pattern { slice: slice.merge(list.slice), kind: PatternKind::Initializer { name, generics, list } })
             }
             tokenizer.next()?;
 
@@ -138,29 +146,118 @@ fn parse_value<'a>(tokenizer: &mut Tokenizer<'a>) -> PatternResult<'a> {
     }
 }
 
-fn parse_initializer<'a>(
+fn parse_initializer_pattern<'a>(
     tokenizer: &mut Tokenizer<'a>,
 ) -> Result<InitializerPattern<'a>, ParserError<'a>> {
     let next = tokenizer.next()?;
     let TokenKind::Symbol(Symbol::BraceOpen) = next.kind else {
         return Err(ParserError::UnexpectedToken(next));
     };
+    let start = next.slice;
 
-    todo!()
+    let peek = tokenizer.peek(0)?;
+
+    match peek.kind {
+        TokenKind::Symbol(Symbol::BraceClose) => {
+            tokenizer.next()?;
+            return Ok(InitializerPattern {
+                slice: start.merge(peek.slice),
+                kind: InitializerPatternKind::Empty,
+            });
+        }
+        TokenKind::Symbol(Symbol::Dot) => {
+            let mut values = vec![];
+
+            loop {
+                let init = parse_named_initializer_pattern(tokenizer)?;
+                values.push(init);
+
+                let peek = tokenizer.peek(0)?;
+                match peek.kind {
+                    TokenKind::Symbol(Symbol::Comma) => {
+                        tokenizer.next()?;
+                        let peek = tokenizer.peek(0)?;
+                        if let TokenKind::Symbol(Symbol::BraceClose) = peek.kind {
+                            break;
+                        }
+                    }
+                    TokenKind::Symbol(Symbol::BraceClose) => {
+                        break;
+                    }
+                    _ => return Err(ParserError::UnexpectedToken(peek)),
+                }
+            }
+
+            let next = tokenizer.next()?;
+            let TokenKind::Symbol(Symbol::BraceClose) = next.kind else {
+                return Err(ParserError::UnexpectedToken(next));
+            };
+
+            return Ok(InitializerPattern {
+                slice: start.merge(next.slice),
+                kind: InitializerPatternKind::Named(values),
+            });
+        }
+        _ => {
+            let mut values = vec![];
+
+            loop {
+                let value = parse_pattern(tokenizer)?;
+                values.push(value);
+
+                let peek = tokenizer.peek(0)?;
+                match peek.kind {
+                    TokenKind::Symbol(Symbol::Comma) => {
+                        tokenizer.next()?;
+                        let peek = tokenizer.peek(0)?;
+                        if let TokenKind::Symbol(Symbol::BraceClose) = peek.kind {
+                            break;
+                        }
+                    }
+                    TokenKind::Symbol(Symbol::BraceClose) => {
+                        break;
+                    }
+                    _ => return Err(ParserError::UnexpectedToken(peek)),
+                }
+            }
+
+            let next = tokenizer.next()?;
+            let TokenKind::Symbol(Symbol::BraceClose) = next.kind else {
+                return Err(ParserError::UnexpectedToken(next));
+            };
+
+            return Ok(InitializerPattern {
+                slice: start.merge(next.slice),
+                kind: InitializerPatternKind::Expr(values),
+            });
+        }
+    }
 }
 
-fn parse_named_initializer<'a>(
+fn parse_named_initializer_pattern<'a>(
     tokenizer: &mut Tokenizer<'a>,
 ) -> Result<NamedInitializerPattern<'a>, ParserError<'a>> {
     let next = tokenizer.next()?;
     let TokenKind::Symbol(Symbol::Dot) = next.kind else {
         return Err(ParserError::UnexpectedToken(next));
     };
+    let start = next.slice;
 
     let next = tokenizer.next()?;
     let TokenKind::Identifier(name) = next.kind else {
         return Err(ParserError::UnexpectedToken(next));
     };
 
-    todo!()
+    let next = tokenizer.next()?;
+    let TokenKind::Symbol(Symbol::Assign) = next.kind else {
+        return Err(ParserError::UnexpectedToken(next));
+    };
+
+    let value = parse_pattern(tokenizer)?;
+
+    return Ok(NamedInitializerPattern {
+        slice: start.merge(value.slice),
+        name,
+        value,
+    });
 }

@@ -223,6 +223,7 @@ fn parse_access_arm<'a>(tokenizer: &mut Tokenizer<'a>, expr: Expr<'a>) -> ExprRe
     }));
 }
 
+/// TODO: Parse array initializer
 fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
     if let Some(ident) = parse_ident(tokenizer)? {
         return Ok(Some(ident));
@@ -405,84 +406,86 @@ pub fn parse_initializer_list<'a>(
 
     let peek = tokenizer.peek(0)?;
 
-    if let TokenKind::Symbol(Symbol::BraceClose) = peek.kind {
-        tokenizer.next()?;
-        return Ok(Some(InitializerList {
-            slice: start.merge(peek.slice),
-            kind: InitializerKind::Empty,
-        }));
-    }
+    match peek.kind {
+        TokenKind::Symbol(Symbol::BraceClose) => {
+            tokenizer.next()?;
+            return Ok(Some(InitializerList {
+                slice: start.merge(peek.slice),
+                kind: InitializerKind::Empty,
+            }));
+        }
+        TokenKind::Symbol(Symbol::Dot) => {
+            let mut values = vec![];
 
-    if let TokenKind::Symbol(Symbol::Dot) = peek.kind {
-        let mut values = vec![];
+            loop {
+                let init = parse_named_initializer(tokenizer)?;
+                values.push(init);
 
-        loop {
-            let init = parse_named_initializer(tokenizer)?;
-            values.push(init);
-
-            let peek = tokenizer.peek(0)?;
-            match peek.kind {
-                TokenKind::Symbol(Symbol::Comma) => {
-                    tokenizer.next()?;
-                    let peek = tokenizer.peek(0)?;
-                    if let TokenKind::Symbol(Symbol::BraceClose | Symbol::Rest) = peek.kind {
+                let peek = tokenizer.peek(0)?;
+                match peek.kind {
+                    TokenKind::Symbol(Symbol::Comma) => {
+                        tokenizer.next()?;
+                        let peek = tokenizer.peek(0)?;
+                        if let TokenKind::Symbol(Symbol::BraceClose | Symbol::Rest) = peek.kind {
+                            break;
+                        }
+                    }
+                    TokenKind::Symbol(Symbol::BraceClose | Symbol::Rest) => {
                         break;
                     }
+                    _ => return Err(ParserError::UnexpectedToken(peek)),
                 }
-                TokenKind::Symbol(Symbol::BraceClose | Symbol::Rest) => {
-                    break;
-                }
-                _ => return Err(ParserError::UnexpectedToken(peek)),
             }
-        }
 
-        let default = parse_defaulted_initializer(tokenizer)?;
+            let default = parse_defaulted_initializer(tokenizer)?;
 
-        let peek = tokenizer.peek(0)?;
-        if default.is_some()
-            && let TokenKind::Symbol(Symbol::Comma) = peek.kind
-        {
-            tokenizer.next()?;
-        }
-
-        let next = tokenizer.next()?;
-        let TokenKind::Symbol(Symbol::BraceClose) = next.kind else {
-            return Err(ParserError::UnexpectedToken(next));
-        };
-
-        return Ok(Some(InitializerList {
-            slice: start.merge(next.slice),
-            kind: InitializerKind::Named { values, default },
-        }));
-    }
-
-    let mut values = vec![];
-    loop {
-        let peek = tokenizer.peek(0)?;
-        let Some(value) = parse_expr(tokenizer)? else {
-            return Err(ParserError::UnexpectedToken(peek));
-        };
-        values.push(value);
-
-        let next = tokenizer.next()?;
-        match next.kind {
-            TokenKind::Symbol(Symbol::BraceClose) => {
-                return Ok(Some(InitializerList {
-                    slice: start.merge(next.slice),
-                    kind: InitializerKind::Expr(values),
-                }))
+            let peek = tokenizer.peek(0)?;
+            if default.is_some()
+                && let TokenKind::Symbol(Symbol::Comma) = peek.kind
+            {
+                tokenizer.next()?;
             }
-            TokenKind::Symbol(Symbol::Comma) => {
+
+            let next = tokenizer.next()?;
+            let TokenKind::Symbol(Symbol::BraceClose) = next.kind else {
+                return Err(ParserError::UnexpectedToken(next));
+            };
+
+            return Ok(Some(InitializerList {
+                slice: start.merge(next.slice),
+                kind: InitializerKind::Named { values, default },
+            }));
+        }
+        _ => {
+            let mut values = vec![];
+            loop {
                 let peek = tokenizer.peek(0)?;
-                if let TokenKind::Symbol(Symbol::BraceClose) = peek.kind {
-                    tokenizer.next()?;
-                    return Ok(Some(InitializerList {
-                        slice: start.merge(peek.slice),
-                        kind: InitializerKind::Expr(values),
-                    }));
+                let Some(value) = parse_expr(tokenizer)? else {
+                    return Err(ParserError::UnexpectedToken(peek));
+                };
+                values.push(value);
+
+                let next = tokenizer.next()?;
+                match next.kind {
+                    TokenKind::Symbol(Symbol::BraceClose) => {
+                        return Ok(Some(InitializerList {
+                            slice: start.merge(next.slice),
+                            kind: InitializerKind::Expr(values),
+                        }))
+                    }
+                    TokenKind::Symbol(Symbol::Comma) => {
+                        let peek = tokenizer.peek(0)?;
+                        if let TokenKind::Symbol(Symbol::BraceClose) = peek.kind {
+                            tokenizer.next()?;
+                            return Ok(Some(InitializerList {
+                                slice: start.merge(peek.slice),
+                                kind: InitializerKind::Expr(values),
+                            }));
+                        }
+                    }
+                    _ => return Err(ParserError::UnexpectedToken(next)),
                 }
             }
-            _ => return Err(ParserError::UnexpectedToken(next)),
         }
     }
 }

@@ -14,7 +14,7 @@ const STR: &'static str = include_str!("test.txt");
 fn main() -> Result<(), ParserError<'static>> {
     let mut tokenizer = Tokenizer::new(STR);
 
-    println!("{:#?}", parse_initializer_list(&mut tokenizer)?);
+    println!("{:#?}", parse_pattern(&mut tokenizer)?);
 
     Ok(())
 }
