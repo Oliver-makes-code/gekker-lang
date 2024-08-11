@@ -1,5 +1,5 @@
 use crate::{
-    ast::{
+    parse_tree::{
         types::{RefKind, Type, TypeKind},
         IdentPath,
     },

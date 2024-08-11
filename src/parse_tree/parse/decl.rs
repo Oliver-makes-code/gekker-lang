@@ -1,5 +1,5 @@
 use crate::{
-    ast::{
+    parse_tree::{
         decl::{
             Attr, Attrs, ClauseKind, Decl, DeclKeyword, DeclKind, FuncBody, FuncParam, GenericType,
             GenericsDecl, IntEnumBody, IntEnumParam, IntEnumType, StructBody, StructParam,

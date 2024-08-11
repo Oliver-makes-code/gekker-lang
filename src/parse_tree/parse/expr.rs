@@ -1,5 +1,5 @@
 use crate::{
-    ast::{
+    parse_tree::{
         expr::{
             AccessKind, BinOp, DefaultedInitializer, Expr, ExprKind, GenericsInstance,
             InitializerKind, InitializerList, NamedInitializer, UnaryOp,
@@ -567,7 +567,7 @@ mod test {
     use std::assert_matches::assert_matches;
 
     use crate::{
-        ast::{
+        parse_tree::{
             expr::{BinOp, Expr, ExprKind},
             parse::{error::ParserError, expr::parse_expr},
         },

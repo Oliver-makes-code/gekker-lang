@@ -1,9 +1,9 @@
 #![feature(decl_macro, let_chains, assert_matches, box_patterns)]
 
-use ast::parse::{error::ParserError, statement::parse_block};
+use parse_tree::parse::{error::ParserError, statement::parse_block};
 use tokenizer::Tokenizer;
 
-pub mod ast;
+pub mod parse_tree;
 pub mod string;
 pub mod tokenizer;
 
