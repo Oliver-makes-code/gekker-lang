@@ -607,7 +607,7 @@ fn parse_lambda_captures<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Lam
 fn parse_lambda_capture<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<LambdaCapture<'a>, ParserError<'a>> {
     let peek = tokenizer.peek(0)?;
 
-    let is_ref = if let TokenKind::Keyword(Keyword::Mut) = peek.kind {
+    let is_ref = if let TokenKind::Keyword(Keyword::Ref) = peek.kind {
         tokenizer.next()?;
         true
     } else {
