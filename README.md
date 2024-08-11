@@ -15,6 +15,8 @@ extremely opinionated.
 ## Todo
 
 - Finish implementing statements
+    - loop, while, for, label, match, goto, return, break
+- Array intializer expressions
 - Traits
 - Namespaces
 - Parse operator traits in types
