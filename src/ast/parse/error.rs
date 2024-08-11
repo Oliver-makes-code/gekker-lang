@@ -1,5 +1,3 @@
-use std::backtrace::Backtrace;
-
 use crate::tokenizer::{token::Token, TokenizeError};
 
 #[derive(Debug, Clone, PartialEq)]

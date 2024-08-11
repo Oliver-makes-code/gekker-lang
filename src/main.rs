@@ -1,6 +1,6 @@
-#![feature(decl_macro, let_chains, assert_matches, box_patterns, backtrace_frames)]
+#![feature(decl_macro, let_chains, assert_matches, box_patterns)]
 
-use ast::parse::{error::ParserError, pattern::parse_pattern, statement::parse_block};
+use ast::parse::{error::ParserError, statement::parse_block};
 use tokenizer::Tokenizer;
 
 pub mod ast;
