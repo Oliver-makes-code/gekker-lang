@@ -11,3 +11,10 @@ extremely opinionated.
     Syntax should feel close to "plain english"
 - Language features should encourage the way in which I program
 - The parser should run with as little lookahead as possible. The syntax should be without context wherever possible.
+
+## Todo
+
+- Finish implementing statements
+- Traits
+- Namespaces
+- Parse operator traits in types
