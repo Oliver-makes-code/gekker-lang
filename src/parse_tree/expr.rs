@@ -53,8 +53,8 @@ pub enum ExprKind<'a> {
         list: InitializerList<'a>,
     },
     Lambda {
-        params: LambdaParams<'a>,
-        captures: LambdaCaptures<'a>,
+        params: Option<LambdaParams<'a>>,
+        captures: Option<LambdaCaptures<'a>>,
         body: Box<FuncBody<'a>>,
     },
     SizeofType(Type<'a>),
@@ -67,6 +67,7 @@ pub enum ExprKind<'a> {
     Default,
     Nullptr,
     Discard,
+    Unit,
 }
 
 #[derive(Debug, Clone, PartialEq)]

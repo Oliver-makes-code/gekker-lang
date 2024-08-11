@@ -9,7 +9,7 @@ use crate::{
 use super::{
     expr::Expr,
     parse::error::ParserError,
-    statement::{Block, FunctionModifier, VariableModifier, VariableName},
+    statement::{Block, FunctionModifier, Statement, VariableModifier, VariableName},
     types::{RefKind, Type},
 };
 
@@ -97,7 +97,13 @@ pub struct Attr<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum FuncBody<'a> {
+pub struct FuncBody<'a> {
+    pub slice: StringSlice<'a>,
+    pub kind: FuncBodyKind<'a>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum FuncBodyKind<'a> {
     Block(Block<'a>),
     Expr(Expr<'a>),
 }

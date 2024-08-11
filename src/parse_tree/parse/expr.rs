@@ -1,8 +1,7 @@
 use crate::{
     parse_tree::{
         expr::{
-            AccessKind, BinOp, DefaultedInitializer, Expr, ExprKind, GenericsInstance,
-            InitializerKind, InitializerList, NamedInitializer, UnaryOp,
+            AccessKind, BinOp, DefaultedInitializer, Expr, ExprKind, GenericsInstance, InitializerKind, InitializerList, LambdaCapture, LambdaCaptures, LambdaParam, LambdaParams, NamedInitializer, UnaryOp
         },
         parse::types::parse_type,
         IdentPath,
@@ -13,7 +12,7 @@ use crate::{
     },
 };
 
-use super::error::ParserError;
+use super::{decl::parse_func_body, error::ParserError};
 
 type ExprResult<'a> = Result<Option<Expr<'a>>, ParserError<'a>>;
 
@@ -263,6 +262,15 @@ fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
         TokenKind::Keyword(Keyword::True) => ExprKind::Bool(true),
         TokenKind::Keyword(Keyword::False) => ExprKind::Bool(false),
         TokenKind::Keyword(Keyword::Nullptr) => ExprKind::Nullptr,
+        TokenKind::Keyword(Keyword::Unit) => ExprKind::Unit,
+        TokenKind::Keyword(Keyword::Func) => {
+            tokenizer.next()?;
+            let params = parse_lambda_params(tokenizer)?;
+            let captures = parse_lambda_captures(tokenizer)?;
+            let body = parse_func_body(tokenizer, false)?;
+
+            return Ok(Some(Expr { slice: slice.merge(body.slice), kind: ExprKind::Lambda { params, captures, body: Box::new(body) } }))
+        }
         TokenKind::Keyword(Keyword::Sizeof) => {
             tokenizer.next()?;
 
@@ -559,6 +567,122 @@ fn parse_named_initializer<'a>(
         slice: start.merge(value.slice),
         name,
         value,
+    });
+}
+
+fn parse_lambda_captures<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<LambdaCaptures<'a>>, ParserError<'a>> {
+    let peek = tokenizer.peek(0)?;
+    let TokenKind::Symbol(Symbol::BracketOpen) = peek.kind else {
+        return Ok(None);
+    };
+    tokenizer.next()?;
+    let start = peek.slice;
+
+    let peek = tokenizer.peek(0)?;
+    if let TokenKind::Symbol(Symbol::BracketClose) = peek.kind {
+        tokenizer.next()?;
+        return Ok(None);
+    }
+
+    let mut captures = vec![];
+
+    loop {
+        let param = parse_lambda_capture(tokenizer)?;
+        captures.push(param);
+
+        let next = tokenizer.next()?;
+        match next.kind {
+            TokenKind::Symbol(Symbol::Comma) => {}
+            TokenKind::Symbol(Symbol::BracketClose) => {
+                return Ok(Some(LambdaCaptures {
+                    slice: start.merge(next.slice),
+                    captures,
+                }))
+            }
+            _ => return Err(ParserError::unexpected_token(next)),
+        }
+    }
+}
+
+fn parse_lambda_capture<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<LambdaCapture<'a>, ParserError<'a>> {
+    let peek = tokenizer.peek(0)?;
+
+    let is_ref = if let TokenKind::Keyword(Keyword::Mut) = peek.kind {
+        tokenizer.next()?;
+        true
+    } else {
+        false
+    };
+
+    let next = tokenizer.next()?;
+    let TokenKind::Identifier(name) = next.kind else {
+        return Err(ParserError::unexpected_token(next));
+    };
+
+    return Ok(LambdaCapture {
+        slice: peek.slice.merge(next.slice),
+        is_ref,
+        name,
+    });
+}
+
+fn parse_lambda_params<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<LambdaParams<'a>>, ParserError<'a>> {
+    let peek = tokenizer.peek(0)?;
+    let TokenKind::Symbol(Symbol::ParenOpen) = peek.kind else {
+        return Ok(None);
+    };
+    tokenizer.next()?;
+    let start = peek.slice;
+
+    let peek = tokenizer.peek(0)?;
+    if let TokenKind::Symbol(Symbol::ParenClose) = peek.kind {
+        tokenizer.next()?;
+        return Ok(None);
+    }
+
+    let mut params = vec![];
+
+    loop {
+        let param = parse_lambda_param(tokenizer)?;
+        params.push(param);
+
+        let next = tokenizer.next()?;
+        match next.kind {
+            TokenKind::Symbol(Symbol::Comma) => {}
+            TokenKind::Symbol(Symbol::ParenClose) => {
+                return Ok(Some(LambdaParams {
+                    slice: start.merge(next.slice),
+                    params,
+                }))
+            }
+            _ => return Err(ParserError::unexpected_token(next)),
+        }
+    }
+}
+
+fn parse_lambda_param<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<LambdaParam<'a>, ParserError<'a>> {
+    let peek = tokenizer.peek(0)?;
+
+    let is_mut = if let TokenKind::Keyword(Keyword::Mut) = peek.kind {
+        tokenizer.next()?;
+        true
+    } else {
+        false
+    };
+
+    let next = tokenizer.next()?;
+    let TokenKind::Identifier(name) = next.kind else {
+        return Err(ParserError::unexpected_token(next));
+    };
+
+    return Ok(LambdaParam {
+        slice: peek.slice.merge(next.slice),
+        is_mut,
+        name,
     });
 }
 
