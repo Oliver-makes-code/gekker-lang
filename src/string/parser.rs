@@ -1,6 +1,6 @@
 use super::{StringSlice, ToStringSlice};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct StringParser<'a> {
     pub src: &'a str,
     idx: usize,
