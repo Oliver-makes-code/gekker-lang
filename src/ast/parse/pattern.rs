@@ -117,7 +117,7 @@ fn parse_value<'a>(tokenizer: &mut Tokenizer<'a>) -> PatternResult<'a> {
             tokenizer.next()?;
             let next = tokenizer.next()?;
             let TokenKind::Identifier(name) = next.kind else {
-                return Err(ParserError::UnexpectedToken(next));
+                return Err(ParserError::unexpected_token(next));
             };
 
             return Ok(Pattern {
@@ -132,7 +132,7 @@ fn parse_value<'a>(tokenizer: &mut Tokenizer<'a>) -> PatternResult<'a> {
                 peek.kind
             {
                 let Some(name) = IdentPath::try_parse(tokenizer)? else {
-                    return Err(ParserError::UnexpectedToken(peek));
+                    return Err(ParserError::unexpected_token(peek));
                 };
 
                 let generics = parse_generics_instance(tokenizer)?;
@@ -167,7 +167,7 @@ fn parse_initializer_pattern<'a>(
 ) -> Result<InitializerPattern<'a>, ParserError<'a>> {
     let next = tokenizer.next()?;
     let TokenKind::Symbol(Symbol::BraceOpen) = next.kind else {
-        return Err(ParserError::UnexpectedToken(next));
+        return Err(ParserError::unexpected_token(next));
     };
     let start = next.slice;
 
@@ -200,13 +200,13 @@ fn parse_initializer_pattern<'a>(
                     TokenKind::Symbol(Symbol::BraceClose) => {
                         break;
                     }
-                    _ => return Err(ParserError::UnexpectedToken(peek)),
+                    _ => return Err(ParserError::unexpected_token(peek)),
                 }
             }
 
             let next = tokenizer.next()?;
             let TokenKind::Symbol(Symbol::BraceClose) = next.kind else {
-                return Err(ParserError::UnexpectedToken(next));
+                return Err(ParserError::unexpected_token(next));
             };
 
             return Ok(InitializerPattern {
@@ -233,13 +233,13 @@ fn parse_initializer_pattern<'a>(
                     TokenKind::Symbol(Symbol::BraceClose) => {
                         break;
                     }
-                    _ => return Err(ParserError::UnexpectedToken(peek)),
+                    _ => return Err(ParserError::unexpected_token(peek)),
                 }
             }
 
             let next = tokenizer.next()?;
             let TokenKind::Symbol(Symbol::BraceClose) = next.kind else {
-                return Err(ParserError::UnexpectedToken(next));
+                return Err(ParserError::unexpected_token(next));
             };
 
             return Ok(InitializerPattern {
@@ -255,18 +255,18 @@ fn parse_named_initializer_pattern<'a>(
 ) -> Result<NamedInitializerPattern<'a>, ParserError<'a>> {
     let next = tokenizer.next()?;
     let TokenKind::Symbol(Symbol::Dot) = next.kind else {
-        return Err(ParserError::UnexpectedToken(next));
+        return Err(ParserError::unexpected_token(next));
     };
     let start = next.slice;
 
     let next = tokenizer.next()?;
     let TokenKind::Identifier(name) = next.kind else {
-        return Err(ParserError::UnexpectedToken(next));
+        return Err(ParserError::unexpected_token(next));
     };
 
     let next = tokenizer.next()?;
     let TokenKind::Symbol(Symbol::Assign) = next.kind else {
-        return Err(ParserError::UnexpectedToken(next));
+        return Err(ParserError::unexpected_token(next));
     };
 
     let value = parse_pattern(tokenizer)?;

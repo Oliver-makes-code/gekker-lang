@@ -202,7 +202,7 @@ impl DeclKeyword {
             }
             _ => {
                 if is_pub {
-                    return Err(ParserError::UnexpectedToken(peek));
+                    return Err(ParserError::unexpected_token(peek));
                 }
 
                 return Ok(None);

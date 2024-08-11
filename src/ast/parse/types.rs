@@ -30,21 +30,21 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
 
             let next = tokenizer.next()?;
             let TokenKind::Symbol(Symbol::Less) = next.kind else {
-                return Err(ParserError::UnexpectedToken(next));
+                return Err(ParserError::unexpected_token(next));
             };
 
             let peek = tokenizer.peek(0)?;
 
             let TokenKind::Symbol(Symbol::Greater) = peek.kind else {
                 let mut params = vec![];
-                
+
                 loop {
                     let ty = parse_type(tokenizer)?;
                     params.push(ty);
 
                     let next = tokenizer.next()?;
                     match next.kind {
-                        TokenKind::Symbol(Symbol::Comma) => {},
+                        TokenKind::Symbol(Symbol::Comma) => {}
                         TokenKind::Symbol(Symbol::Greater) => {
                             return Ok(Type {
                                 slice: start.merge(next.slice),
@@ -53,8 +53,8 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
                                     generics: params,
                                 },
                             });
-                        },
-                        _ => return Err(ParserError::UnexpectedToken(next)),
+                        }
+                        _ => return Err(ParserError::unexpected_token(next)),
                     }
                 }
             };
@@ -125,12 +125,12 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
                         decimal: 0.0,
                     }) = next.kind
                     else {
-                        return Err(ParserError::UnexpectedToken(next));
+                        return Err(ParserError::unexpected_token(next));
                     };
 
                     let next = tokenizer.next()?;
                     let TokenKind::Symbol(Symbol::BracketClose) = next.kind else {
-                        return Err(ParserError::UnexpectedToken(next));
+                        return Err(ParserError::unexpected_token(next));
                     };
 
                     return Ok(Type {
@@ -148,7 +148,7 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
                         kind: TypeKind::Slice(Box::new(value)),
                     });
                 }
-                _ => return Err(ParserError::UnexpectedToken(peek)),
+                _ => return Err(ParserError::unexpected_token(peek)),
             }
         }
         TokenKind::Keyword(Keyword::Func) => {
@@ -157,7 +157,7 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
 
             let peek = tokenizer.next()?;
             let TokenKind::Symbol(Symbol::ParenOpen) = peek.kind else {
-                return Err(ParserError::UnexpectedToken(peek));
+                return Err(ParserError::unexpected_token(peek));
             };
             let mut peek = tokenizer.peek(0)?;
             let mut params = vec![];
@@ -170,7 +170,7 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
                 peek = tokenizer.next()?;
 
                 let TokenKind::Symbol(Symbol::Comma | Symbol::ParenClose) = peek.kind else {
-                    return Err(ParserError::UnexpectedToken(peek));
+                    return Err(ParserError::unexpected_token(peek));
                 };
             }
 
@@ -208,6 +208,6 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
                 kind: TypeKind::Struct(body),
             });
         }
-        _ => return Err(ParserError::UnexpectedToken(peek)),
+        _ => return Err(ParserError::unexpected_token(peek)),
     }
 }
