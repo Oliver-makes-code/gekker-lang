@@ -59,11 +59,15 @@ fn parse_operators<'a>(tokenizer: &mut Tokenizer<'a>, binding: usize) -> ExprRes
 
 fn parse_unary<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
     let mut unary_ops = vec![];
-    let mut peek = tokenizer.peek(0)?;
-    while let Some(op) = UnaryOp::try_parse(peek.kind) {
+
+    loop {
+        let peek = tokenizer.peek(0)?;
+        let Some(op) = UnaryOp::try_parse_prefix(peek.kind) else {
+            break;
+        };
         tokenizer.next()?;
+
         unary_ops.push((peek.slice, op));
-        peek = tokenizer.peek(0)?;
     }
 
     let Some(mut expr) = parse_access(tokenizer)? else {
@@ -78,6 +82,22 @@ fn parse_unary<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
                 value: Box::new(expr),
             },
         };
+    }
+
+    loop {
+        let peek = tokenizer.peek(0)?;
+        let Some(op) = UnaryOp::try_parse_suffix(peek.kind) else {
+            break;
+        };
+        tokenizer.next()?;
+
+        expr = Expr {
+            slice: expr.slice.merge(peek.slice),
+            kind: ExprKind::UnaryOp {
+                op,
+                value: Box::new(expr),
+            },
+        }
     }
 
     return Ok(Some(expr));

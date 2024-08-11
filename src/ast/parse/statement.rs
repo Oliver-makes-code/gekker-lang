@@ -5,7 +5,8 @@ use crate::{
             pattern::parse_pattern,
         },
         statement::{
-            Block, IfClause, IfClauseKind, IfCondition, IfStatement, LetMatchClause, LetMatchElseStatement, Statement, StatementKind
+            Block, IfClause, IfClauseKind, IfCondition, IfStatement, LetMatchClause,
+            LetMatchElseStatement, Statement, StatementKind,
         },
     },
     tokenizer::{
@@ -70,7 +71,7 @@ pub fn parse_block<'a>(
     tokenizer.next()?;
 
     let start = peek.slice;
-    
+
     let peek = tokenizer.peek(0)?;
     if let TokenKind::Symbol(Symbol::BraceClose) = peek.kind {
         tokenizer.next()?;
@@ -104,7 +105,9 @@ pub fn parse_block<'a>(
     }
 }
 
-fn parse_let_match_else<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<LetMatchElseStatement<'a>>, ParserError<'a>> {
+fn parse_let_match_else<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<LetMatchElseStatement<'a>>, ParserError<'a>> {
     let Some(clause) = parse_let_match_clause(tokenizer)? else {
         return Ok(None);
     };
@@ -122,7 +125,7 @@ fn parse_let_match_else<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<LetM
     return Ok(Some(LetMatchElseStatement {
         slice: clause.slice.merge(block.slice),
         clause,
-        block
+        block,
     }));
 }
 

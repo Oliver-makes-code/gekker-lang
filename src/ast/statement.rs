@@ -19,7 +19,7 @@ pub enum StatementKind<'a> {
     Decl(Decl<'a>),
     Expr(Expr<'a>),
     If(IfStatement<'a>),
-    LetMatchElse(LetMatchElseStatement<'a>)
+    LetMatchElse(LetMatchElseStatement<'a>),
 }
 
 #[derive(Debug, Clone, PartialEq)]

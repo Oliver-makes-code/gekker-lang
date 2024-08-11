@@ -3,7 +3,7 @@ use crate::{
     tokenizer::token::{Keyword, Number, Symbol, TokenKind},
 };
 
-use super::{types::Type, IdentPath};
+use super::{decl::FuncBody, types::Type, IdentPath};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Expr<'a> {
@@ -49,6 +49,14 @@ pub enum ExprKind<'a> {
         generics: Option<GenericsInstance<'a>>,
         list: InitializerList<'a>,
     },
+    AnonStructInitializer {
+        list: InitializerList<'a>,
+    },
+    Lambda {
+        params: LambdaParams<'a>,
+        captures: LambdaCaptures<'a>,
+        body: Box<FuncBody<'a>>,
+    },
     SizeofType(Type<'a>),
     SizeofValue(Box<Expr<'a>>),
     Number(Number),
@@ -59,6 +67,32 @@ pub enum ExprKind<'a> {
     Default,
     Nullptr,
     Discard,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct LambdaParams<'a> {
+    pub slice: StringSlice<'a>,
+    pub params: Vec<LambdaParam<'a>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct LambdaParam<'a> {
+    pub slice: StringSlice<'a>,
+    pub is_mut: bool,
+    pub name: &'a str,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct LambdaCaptures<'a> {
+    pub slice: StringSlice<'a>,
+    pub captures: Vec<LambdaCapture<'a>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct LambdaCapture<'a> {
+    pub slice: StringSlice<'a>,
+    pub is_ref: bool,
+    pub name: &'a str,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -121,6 +155,9 @@ pub enum UnaryOp {
     Reference, // ref
     Pointer,   // &
     Deref,     // *
+
+    Coalesce, // ?
+    Cascade,  // !
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -173,7 +210,7 @@ impl AccessKind {
 }
 
 impl UnaryOp {
-    pub fn try_parse<'a>(kind: TokenKind) -> Option<Self> {
+    pub fn try_parse_prefix<'a>(kind: TokenKind) -> Option<Self> {
         let op = match kind {
             TokenKind::Symbol(Symbol::Add) => Self::Add,
             TokenKind::Symbol(Symbol::Sub) => Self::Sub,
@@ -182,6 +219,16 @@ impl UnaryOp {
             TokenKind::Symbol(Symbol::BitAnd) => Self::Pointer,
             TokenKind::Symbol(Symbol::Mul) => Self::Deref,
             TokenKind::Keyword(Keyword::Ref) => Self::Reference,
+            _ => return None,
+        };
+
+        return Some(op);
+    }
+
+    pub fn try_parse_suffix<'a>(kind: TokenKind) -> Option<Self> {
+        let op = match kind {
+            TokenKind::Symbol(Symbol::Optional) => Self::Coalesce,
+            TokenKind::Symbol(Symbol::BoolNot) => Self::Cascade,
             _ => return None,
         };
 

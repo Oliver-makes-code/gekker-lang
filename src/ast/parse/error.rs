@@ -12,7 +12,10 @@ pub enum ParserError<'a> {
 impl<'a> ParserError<'a> {
     #[track_caller]
     pub fn unexpected_token(token: Token<'a>) -> Self {
-        return Self::UnexpectedToken { token, throwing_location: format!("{}", std::panic::Location::caller()) };
+        return Self::UnexpectedToken {
+            token,
+            throwing_location: format!("{}", std::panic::Location::caller()),
+        };
     }
 }
 
