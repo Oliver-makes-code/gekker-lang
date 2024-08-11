@@ -1,7 +1,9 @@
 use crate::{
     parse_tree::{
         decl::{
-            Attr, Attrs, ClauseKind, Decl, DeclKeyword, DeclKind, FuncBody, FuncBodyKind, FuncParam, GenericType, GenericsDecl, IntEnumBody, IntEnumParam, IntEnumType, StructBody, StructParam, ThisParam, TypeClause
+            Attr, Attrs, ClauseKind, Decl, DeclKeyword, DeclKind, FuncBody, FuncBodyKind,
+            FuncParam, GenericType, GenericsDecl, IntEnumBody, IntEnumParam, IntEnumType,
+            StructBody, StructParam, ThisParam, TypeClause,
         },
         statement::{FunctionModifier, VariableModifier, VariableName},
         types::RefKind,
@@ -13,7 +15,7 @@ use crate::{
     },
 };
 
-use super::{error::ParserError, expr::parse_expr, statement::{parse_block, parse_statement}, types::parse_type};
+use super::{error::ParserError, expr::parse_expr, statement::parse_block, types::parse_type};
 
 type DeclResult<'a> = Result<Decl<'a>, ParserError<'a>>;
 type OptDeclResult<'a> = Result<Option<Decl<'a>>, ParserError<'a>>;
@@ -625,7 +627,10 @@ fn parse_func_decl<'a>(
     })
 }
 
-pub fn parse_func_body<'a>(tokenizer: &mut Tokenizer<'a>, require_semicolon: bool) -> Result<FuncBody<'a>, ParserError<'a>> {
+pub fn parse_func_body<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+    require_semicolon: bool,
+) -> Result<FuncBody<'a>, ParserError<'a>> {
     let peek = tokenizer.peek(0)?;
     let start = peek.slice;
     match peek.kind {
@@ -641,17 +646,17 @@ pub fn parse_func_body<'a>(tokenizer: &mut Tokenizer<'a>, require_semicolon: boo
                 let TokenKind::Symbol(Symbol::Semicolon) = next.kind else {
                     return Err(ParserError::unexpected_token(next));
                 };
-            
+
                 return Ok(FuncBody {
                     slice: start.merge(next.slice),
-                    kind: FuncBodyKind::Expr(expr)
-                })
+                    kind: FuncBodyKind::Expr(expr),
+                });
             }
-            
+
             return Ok(FuncBody {
                 slice: start.merge(expr.slice),
-                kind: FuncBodyKind::Expr(expr)
-            })
+                kind: FuncBodyKind::Expr(expr),
+            });
         }
         TokenKind::Symbol(Symbol::BraceOpen) => {
             let t = tokenizer.peek(0)?;
@@ -661,7 +666,7 @@ pub fn parse_func_body<'a>(tokenizer: &mut Tokenizer<'a>, require_semicolon: boo
 
             return Ok(FuncBody {
                 slice: start.merge(block.slice),
-                kind: FuncBodyKind::Block(block)
+                kind: FuncBodyKind::Block(block),
             });
         }
         _ => return Err(ParserError::unexpected_token(peek)),

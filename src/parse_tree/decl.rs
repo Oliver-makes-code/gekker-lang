@@ -9,7 +9,7 @@ use crate::{
 use super::{
     expr::Expr,
     parse::error::ParserError,
-    statement::{Block, FunctionModifier, Statement, VariableModifier, VariableName},
+    statement::{Block, FunctionModifier, VariableModifier, VariableName},
     types::{RefKind, Type},
 };
 

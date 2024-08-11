@@ -1,7 +1,9 @@
 use crate::{
     parse_tree::{
         expr::{
-            AccessKind, BinOp, DefaultedInitializer, Expr, ExprKind, GenericsInstance, InitializerKind, InitializerList, LambdaCapture, LambdaCaptures, LambdaParam, LambdaParams, NamedInitializer, UnaryOp
+            AccessKind, BinOp, DefaultedInitializer, Expr, ExprKind, GenericsInstance,
+            InitializerKind, InitializerList, LambdaCapture, LambdaCaptures, LambdaParam,
+            LambdaParams, NamedInitializer, UnaryOp,
         },
         parse::types::parse_type,
         IdentPath,
@@ -269,7 +271,14 @@ fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
             let captures = parse_lambda_captures(tokenizer)?;
             let body = parse_func_body(tokenizer, false)?;
 
-            return Ok(Some(Expr { slice: slice.merge(body.slice), kind: ExprKind::Lambda { params, captures, body: Box::new(body) } }))
+            return Ok(Some(Expr {
+                slice: slice.merge(body.slice),
+                kind: ExprKind::Lambda {
+                    params,
+                    captures,
+                    body: Box::new(body),
+                },
+            }));
         }
         TokenKind::Keyword(Keyword::Sizeof) => {
             tokenizer.next()?;
@@ -570,7 +579,9 @@ fn parse_named_initializer<'a>(
     });
 }
 
-fn parse_lambda_captures<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<LambdaCaptures<'a>>, ParserError<'a>> {
+fn parse_lambda_captures<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<LambdaCaptures<'a>>, ParserError<'a>> {
     let peek = tokenizer.peek(0)?;
     let TokenKind::Symbol(Symbol::BracketOpen) = peek.kind else {
         return Ok(None);
@@ -604,7 +615,9 @@ fn parse_lambda_captures<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Lam
     }
 }
 
-fn parse_lambda_capture<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<LambdaCapture<'a>, ParserError<'a>> {
+fn parse_lambda_capture<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<LambdaCapture<'a>, ParserError<'a>> {
     let peek = tokenizer.peek(0)?;
 
     let is_ref = if let TokenKind::Keyword(Keyword::Ref) = peek.kind {
