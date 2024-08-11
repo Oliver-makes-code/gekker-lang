@@ -1,3 +1,4 @@
 {
-    func f(x: i32) => func(y)[ref x] => x + y;
+    func f(x: i32): func(i32): i32
+        => func(y)[ref x] => x + y;
 }
