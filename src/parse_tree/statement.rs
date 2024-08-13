@@ -20,6 +20,7 @@ pub enum StatementKind<'a> {
     Expr(Expr<'a>),
     If(IfStatement<'a>),
     LetMatchElse(LetMatchElseStatement<'a>),
+    Match(MatchStatement<'a>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -59,6 +60,32 @@ pub struct LetMatchClause<'a> {
     pub slice: StringSlice<'a>,
     pub pat: Pattern<'a>,
     pub value: Expr<'a>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MatchStatement<'a> {
+    pub slice: StringSlice<'a>,
+    pub value: Expr<'a>,
+    pub clauses: Vec<MatchClause<'a>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MatchClause<'a> {
+    pub slice: StringSlice<'a>,
+    pub pat: Pattern<'a>,
+    pub block: MatchBlock<'a>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MatchBlock<'a> {
+    pub slice: StringSlice<'a>,
+    pub kind: MatchBlockKind<'a>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum MatchBlockKind<'a> {
+    Statement(Box<Statement<'a>>),
+    Block(Block<'a>),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -6,7 +6,8 @@ use crate::{
         },
         statement::{
             Block, IfClause, IfClauseKind, IfCondition, IfStatement, LetMatchClause,
-            LetMatchElseStatement, Statement, StatementKind,
+            LetMatchElseStatement, MatchBlock, MatchBlockKind, MatchClause, MatchStatement,
+            Statement, StatementKind,
         },
     },
     tokenizer::{
@@ -24,6 +25,13 @@ pub fn parse_statement<'a>(tokenizer: &mut Tokenizer<'a>) -> StatementResult<'a>
         return Ok(Some(Statement {
             slice: let_match_else.slice,
             kind: StatementKind::LetMatchElse(let_match_else),
+        }));
+    }
+
+    if let Some(mat) = parse_match(tokenizer)? {
+        return Ok(Some(Statement {
+            slice: mat.slice,
+            kind: StatementKind::Match(mat),
         }));
     }
 
@@ -103,6 +111,105 @@ pub fn parse_block<'a>(
             }));
         }
     }
+}
+
+fn parse_match<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<MatchStatement<'a>>, ParserError<'a>> {
+    let peek = tokenizer.peek(0)?;
+    let TokenKind::Keyword(Keyword::Match) = peek.kind else {
+        return Ok(None);
+    };
+    tokenizer.next()?;
+    let start = peek.slice;
+
+    let next = tokenizer.next()?;
+    let TokenKind::Symbol(Symbol::ParenOpen) = next.kind else {
+        return Err(ParserError::unexpected_token(next));
+    };
+
+    let peek = tokenizer.peek(0)?;
+    let Some(value) = parse_expr(tokenizer)? else {
+        return Err(ParserError::unexpected_token(peek));
+    };
+
+    let next = tokenizer.next()?;
+    let TokenKind::Symbol(Symbol::ParenClose) = next.kind else {
+        return Err(ParserError::unexpected_token(next));
+    };
+
+    let next = tokenizer.next()?;
+    let TokenKind::Symbol(Symbol::BraceOpen) = next.kind else {
+        return Err(ParserError::unexpected_token(next));
+    };
+
+    let peek = tokenizer.peek(0)?;
+    if let TokenKind::Symbol(Symbol::BraceClose) = peek.kind {
+        return Ok(Some(MatchStatement {
+            slice: start.merge(peek.slice),
+            value,
+            clauses: vec![],
+        }));
+    }
+
+    let mut clauses = vec![];
+
+    loop {
+        let clause = parse_match_clause(tokenizer)?;
+        clauses.push(clause);
+
+        let next = tokenizer.peek(0)?;
+
+        if let TokenKind::Symbol(Symbol::BraceClose) = next.kind {
+            tokenizer.next()?;
+            return Ok(Some(MatchStatement {
+                slice: start.merge(next.slice),
+                value,
+                clauses,
+            }));
+        }
+    }
+}
+
+fn parse_match_clause<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<MatchClause<'a>, ParserError<'a>> {
+    let pat = parse_pattern(tokenizer)?;
+
+    let next = tokenizer.next()?;
+    let TokenKind::Symbol(Symbol::WideArrow) = next.kind else {
+        return Err(ParserError::unexpected_token(next));
+    };
+
+    let block = parse_match_block(tokenizer)?;
+    return Ok(MatchClause {
+        slice: pat.slice.merge(block.slice),
+        pat,
+        block,
+    });
+}
+
+fn parse_match_block<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<MatchBlock<'a>, ParserError<'a>> {
+    let peek = tokenizer.peek(0)?;
+    if let TokenKind::Symbol(Symbol::BraceOpen) = peek.kind {
+        let Some(block) = parse_block(tokenizer)? else {
+            return Err(ParserError::unexpected_token(peek));
+        };
+
+        return Ok(MatchBlock {
+            slice: block.slice,
+            kind: MatchBlockKind::Block(block),
+        });
+    }
+
+    let Some(statement) = parse_statement(tokenizer)? else {
+        return Err(ParserError::unexpected_token(peek))?;
+    };
+
+    return Ok(MatchBlock {
+        slice: statement.slice,
+        kind: MatchBlockKind::Statement(Box::new(statement)),
+    });
 }
 
 fn parse_let_match_else<'a>(

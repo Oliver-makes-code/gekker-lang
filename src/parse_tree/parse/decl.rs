@@ -600,7 +600,7 @@ fn parse_func_decl<'a>(
 
     let body = match peek.kind {
         TokenKind::Symbol(Symbol::WideArrow | Symbol::BraceOpen) => {
-            let body = parse_func_body(tokenizer, true)?;
+            let body = parse_func_body(tokenizer, Some(Symbol::Semicolon))?;
             end = body.slice;
             Some(body)
         }
@@ -629,7 +629,7 @@ fn parse_func_decl<'a>(
 
 pub fn parse_func_body<'a>(
     tokenizer: &mut Tokenizer<'a>,
-    require_semicolon: bool,
+    end_symbol: Option<Symbol>,
 ) -> Result<FuncBody<'a>, ParserError<'a>> {
     let peek = tokenizer.peek(0)?;
     let start = peek.slice;
@@ -641,9 +641,9 @@ pub fn parse_func_body<'a>(
                 return Err(ParserError::unexpected_token(t));
             };
 
-            if require_semicolon {
+            if let Some(sym) = end_symbol {
                 let next = tokenizer.next()?;
-                let TokenKind::Symbol(Symbol::Semicolon) = next.kind else {
+                if next.kind != TokenKind::Symbol(sym) {
                     return Err(ParserError::unexpected_token(next));
                 };
 

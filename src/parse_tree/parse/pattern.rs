@@ -158,7 +158,7 @@ fn parse_value<'a>(tokenizer: &mut Tokenizer<'a>) -> PatternResult<'a> {
                 },
             });
         }
-        a => todo!("{a:?}"),
+        _ => return Err(ParserError::unexpected_token(peek)),
     }
 }
 

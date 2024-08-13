@@ -269,7 +269,7 @@ fn parse_atom<'a>(tokenizer: &mut Tokenizer<'a>) -> ExprResult<'a> {
             tokenizer.next()?;
             let params = parse_lambda_params(tokenizer)?;
             let captures = parse_lambda_captures(tokenizer)?;
-            let body = parse_func_body(tokenizer, false)?;
+            let body = parse_func_body(tokenizer, None)?;
 
             return Ok(Some(Expr {
                 slice: slice.merge(body.slice),

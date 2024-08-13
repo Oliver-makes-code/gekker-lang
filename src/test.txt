@@ -1,4 +1,6 @@
 {
-    func f(x: i32): func(i32): i32
-        => func(y)[ref x] => x + y;
+    match (x) {
+        1 => a;
+        2 | 3 => {}
+    }
 }
