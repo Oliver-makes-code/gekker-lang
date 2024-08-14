@@ -38,6 +38,8 @@ pub enum TypeKind<'a> {
 
     This,
 
+    Str,
+
     Ref {
         ref_kind: RefKind,
         ty: Box<Type<'a>>,
@@ -96,6 +98,8 @@ impl<'a> TypeKind<'a> {
             TokenKind::Keyword(Keyword::Never) => Self::Never,
 
             TokenKind::Keyword(Keyword::ThisType) => Self::This,
+
+            TokenKind::Keyword(Keyword::Str) => Self::Str,
 
             _ => return None,
         });

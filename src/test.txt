@@ -1,6 +1,5 @@
 {
-    match (x) {
-        1 => a;
-        2 | 3 => {}
+    func Main(args: ref [ref str]): i32 {
+        SDL_Init(SDL_INIT_VIDEO | SDL_INIT_VULKAN);
     }
 }

@@ -44,6 +44,7 @@ pub enum Keyword {
     // Builtin types
     Bool,
     Char,
+    Str,
     ThisType, // This
     Unit,
     Never,
@@ -202,6 +203,7 @@ impl Keyword {
             "This" => Self::ThisType,
             "unit" => Self::Unit,
             "never" => Self::Never,
+            "str" => Self::Str,
 
             "i8" => Self::I8,
             "u8" => Self::U8,
