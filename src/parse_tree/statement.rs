@@ -21,6 +21,14 @@ pub enum StatementKind<'a> {
     If(IfStatement<'a>),
     LetMatchElse(LetMatchElseStatement<'a>),
     Match(MatchStatement<'a>),
+    Return(ReturnStatement<'a>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ReturnStatement<'a> {
+    pub slice: StringSlice<'a>,
+    pub value: Option<Expr<'a>>,
+    pub condition: Option<Expr<'a>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]

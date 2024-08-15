@@ -1,5 +1,6 @@
-{
-    func Main(args: ref [ref str]): i32 {
-        SDL_Init(SDL_INIT_VIDEO | SDL_INIT_VULKAN);
-    }
+{   
+    return;
+    return 5;
+    return if (true);
+    return 5 if (true);
 }

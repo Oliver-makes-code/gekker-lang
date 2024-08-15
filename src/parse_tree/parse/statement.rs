@@ -7,7 +7,7 @@ use crate::{
         statement::{
             Block, IfClause, IfClauseKind, IfCondition, IfStatement, LetMatchClause,
             LetMatchElseStatement, MatchBlock, MatchBlockKind, MatchClause, MatchStatement,
-            Statement, StatementKind,
+            ReturnStatement, Statement, StatementKind,
         },
     },
     tokenizer::{
@@ -21,6 +21,13 @@ use super::{decl::parse_decl, error::ParserError};
 type StatementResult<'a> = Result<Option<Statement<'a>>, ParserError<'a>>;
 
 pub fn parse_statement<'a>(tokenizer: &mut Tokenizer<'a>) -> StatementResult<'a> {
+    if let Some(ret) = parse_return(tokenizer)? {
+        return Ok(Some(Statement {
+            slice: ret.slice,
+            kind: StatementKind::Return(ret),
+        }));
+    }
+
     if let Some(let_match_else) = parse_let_match_else(tokenizer)? {
         return Ok(Some(Statement {
             slice: let_match_else.slice,
@@ -111,6 +118,54 @@ pub fn parse_block<'a>(
             }));
         }
     }
+}
+
+fn parse_return<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<ReturnStatement<'a>>, ParserError<'a>> {
+    let peek = tokenizer.peek(0)?;
+    let TokenKind::Keyword(Keyword::Return) = peek.kind else {
+        return Ok(None);
+    };
+    tokenizer.next()?;
+    let start = peek.slice;
+
+    let value = parse_expr(tokenizer)?;
+
+    let peek = tokenizer.peek(0)?;
+    let condition = if let TokenKind::Keyword(Keyword::If) = peek.kind {
+        tokenizer.next()?;
+
+        let next = tokenizer.next()?;
+        let TokenKind::Symbol(Symbol::ParenOpen) = next.kind else {
+            return Err(ParserError::unexpected_token(next));
+        };
+
+        let peek = tokenizer.peek(0)?;
+        let Some(expr) = parse_expr(tokenizer)? else {
+            return Err(ParserError::unexpected_token(peek));
+        };
+
+        let next = tokenizer.next()?;
+        let TokenKind::Symbol(Symbol::ParenClose) = next.kind else {
+            return Err(ParserError::unexpected_token(next));
+        };
+
+        Some(expr)
+    } else {
+        None
+    };
+
+    let next = tokenizer.next()?;
+    let TokenKind::Symbol(Symbol::Semicolon) = next.kind else {
+        return Err(ParserError::unexpected_token(next));
+    };
+
+    return Ok(Some(ReturnStatement {
+        slice: start.merge(next.slice),
+        value,
+        condition,
+    }));
 }
 
 fn parse_match<'a>(
