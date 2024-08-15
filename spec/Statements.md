@@ -169,8 +169,4 @@ let match (Ok { thing } => value) else {
 Print("{}", thing);
 ```
 
-`return if` also works with this
-
-```
-return err if let match (Err { err } => value);
-```
+`return if` will not work with this. Using a value before it's declaration is bad indirection.
