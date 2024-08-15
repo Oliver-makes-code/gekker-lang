@@ -23,7 +23,7 @@ We also have some loops, that being, `for`, `for in`, `while`, and `loop`.
 `for` is your basic, C-style, for loop.
 
 ```
-for (x = 0, x < 5, x++) {
+for (let x = 0, x < 5, x++) {
     //...
 }
 ```
@@ -126,9 +126,9 @@ You can also use an identifier to assign it to a variable. For example
 
 ```
 match (thing) {
-    Ok { 1 | 2 } => Print("yippee"),
-    Ok { value } => Print(value),
-    Err { _ } => Print("Error!"),
+    Ok { 1 | 2 } => Print("yippee");
+    Ok { value } => Print(value);
+    Err { _ } => Print("Error!");
 }
 ```
 
