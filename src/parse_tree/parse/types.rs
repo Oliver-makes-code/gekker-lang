@@ -162,8 +162,6 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
             let mut peek = tokenizer.peek(0)?;
             let mut params = vec![];
 
-            println!("{:?}", peek);
-
             while peek.kind != TokenKind::Symbol(Symbol::ParenClose) {
                 params.push(parse_type(tokenizer)?);
 

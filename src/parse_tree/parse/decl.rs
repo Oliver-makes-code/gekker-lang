@@ -1,12 +1,17 @@
+use std::fmt::Debug;
+
 use crate::{
     parse_tree::{
         decl::{
-            Attr, Attrs, ClauseKind, Decl, DeclKeyword, DeclKind, FuncBody, FuncBodyKind,
-            FuncParam, GenericType, GenericsDecl, IntEnumBody, IntEnumParam, IntEnumType,
-            StructBody, StructParam, ThisParam, TypeClause,
+            Attr, Attrs, ClauseKind, DeclLvl1, DeclLvl1Kind, DeclLvl2, DeclLvl2Kind, DeclLvl3,
+            DeclLvl3Kind, DeclModifier, EnumDecl, EnumDeclKind, FuncBody, FuncBodyKind, FuncParam,
+            FunctionDecl, GenericType, GenericsDecl, ImplDecl, IntEnumBody, IntEnumParam,
+            IntEnumType, NamespaceDecl, StructBody, StructDecl, StructDeclKind, StructParam,
+            ThisParam, TraitBody, TraitDecl, TypeClause, UnionDecl, VariableDecl,
         },
         statement::{FunctionModifier, VariableModifier, VariableName},
-        types::RefKind,
+        types::{RefKind, Type},
+        IdentPath,
     },
     string::StringSlice,
     tokenizer::{
@@ -17,58 +22,557 @@ use crate::{
 
 use super::{error::ParserError, expr::parse_expr, statement::parse_block, types::parse_type};
 
-type DeclResult<'a> = Result<Decl<'a>, ParserError<'a>>;
-type OptDeclResult<'a> = Result<Option<Decl<'a>>, ParserError<'a>>;
+pub fn parse_lvl_1_decl<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<DeclLvl1<'a>>, ParserError<'a>> {
+    if let Some(decl) = parse_lvl_2_decl(tokenizer)? {
+        return Ok(Some(DeclLvl1 {
+            slice: decl.slice,
+            kind: DeclLvl1Kind::Lvl2(decl),
+        }));
+    }
 
-pub fn parse_decl<'a>(tokenizer: &mut Tokenizer<'a>) -> OptDeclResult<'a> {
-    let slice = tokenizer.peek(0)?.slice;
+    if let Some(namespace) = parse_namespace(tokenizer)? {
+        return Ok(Some(DeclLvl1 {
+            slice: namespace.slice,
+            kind: DeclLvl1Kind::Namespace(namespace),
+        }));
+    }
+
+    if let Some(using) = parse_using(tokenizer)? {
+        return Ok(Some(DeclLvl1 {
+            slice: using.slice,
+            kind: DeclLvl1Kind::Using(using),
+        }));
+    }
+
+    Ok(None)
+}
+
+pub fn parse_lvl_2_decl<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<DeclModifier<'a, DeclLvl2<'a>>>, ParserError<'a>> {
+    return parse_modifiers(tokenizer, parse_lvl_2_decl_raw, |it| it.slice);
+}
+
+pub fn parse_lvl_3_decl<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<DeclModifier<'a, DeclLvl3<'a>>>, ParserError<'a>> {
+    return parse_modifiers(tokenizer, parse_lvl_3_decl_raw, |it| it.slice);
+}
+
+fn parse_lvl_2_decl_raw<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<DeclLvl2<'a>>, ParserError<'a>> {
+    if let Some(lvl3) = parse_lvl_3_decl_raw(tokenizer)? {
+        return Ok(Some(DeclLvl2 {
+            slice: lvl3.slice,
+            kind: DeclLvl2Kind::Lvl3(lvl3),
+        }));
+    }
+
+    if let Some(st) = parse_struct_decl(tokenizer)? {
+        return Ok(Some(DeclLvl2 {
+            slice: st.slice,
+            kind: DeclLvl2Kind::Struct(st),
+        }));
+    }
+
+    if let Some(en) = parse_enum_decl(tokenizer)? {
+        return Ok(Some(DeclLvl2 {
+            slice: en.slice,
+            kind: DeclLvl2Kind::Enum(en),
+        }));
+    }
+
+    if let Some(un) = parse_union_decl(tokenizer)? {
+        return Ok(Some(DeclLvl2 {
+            slice: un.slice,
+            kind: DeclLvl2Kind::Union(un),
+        }));
+    }
+
+    if let Some(tr) = parse_trait_decl(tokenizer)? {
+        return Ok(Some(DeclLvl2 {
+            slice: tr.slice,
+            kind: DeclLvl2Kind::Trait(tr),
+        }));
+    }
+
+    if let Some(im) = parse_impl_decl(tokenizer)? {
+        return Ok(Some(DeclLvl2 {
+            slice: im.slice,
+            kind: DeclLvl2Kind::Impl(im),
+        }));
+    }
+
+    return Ok(None);
+}
+
+fn parse_lvl_3_decl_raw<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<DeclLvl3<'a>>, ParserError<'a>> {
+    if let Some(var) = parse_var_decl(tokenizer)? {
+        return Ok(Some(DeclLvl3 {
+            slice: var.slice,
+            kind: DeclLvl3Kind::Variable(var),
+        }));
+    }
+
+    if let Some(func) = parse_func_decl(tokenizer)? {
+        return Ok(Some(DeclLvl3 {
+            slice: func.slice,
+            kind: DeclLvl3Kind::Function(func),
+        }));
+    }
+
+    return Ok(None);
+}
+
+fn parse_modifiers<'a, FGet, FSlice, T>(
+    tokenizer: &mut Tokenizer<'a>,
+    get: FGet,
+    slice: FSlice,
+) -> Result<Option<DeclModifier<'a, T>>, ParserError<'a>>
+where
+    FGet: FnOnce(&mut Tokenizer<'a>) -> Result<Option<T>, ParserError<'a>>,
+    FSlice: Fn(&T) -> StringSlice<'a>,
+    T: Debug + Clone + PartialEq,
+{
+    let peek = tokenizer.peek(0)?;
+    let start = peek.slice;
 
     let attrs = parse_attrs(tokenizer)?;
 
-    let generics = parse_generic_list(tokenizer)?;
+    let generics = parse_generics_decl(tokenizer)?;
 
     let peek = tokenizer.peek(0)?;
+    let is_pub = match peek.kind {
+        TokenKind::Keyword(Keyword::Pub) => {
+            tokenizer.next()?;
+            true
+        }
+        _ => false,
+    };
 
-    let Some((is_pub, decl)) = DeclKeyword::try_parse(tokenizer)? else {
-        if attrs.is_some() || generics.is_some() {
+    let peek = tokenizer.peek(0)?;
+    let Some(value) = get(tokenizer)? else {
+        if attrs.is_some() || generics.is_some() || is_pub {
             return Err(ParserError::unexpected_token(peek));
         }
         return Ok(None);
     };
 
-    if let DeclKeyword::Func = decl {
-        let TokenKind::Identifier(_) = tokenizer.peek(1)?.kind else {
-            return Ok(None);
+    return Ok(Some(DeclModifier {
+        slice: start.merge(slice(&value)),
+        attrs,
+        generics,
+        is_pub,
+        value,
+    }));
+}
+
+pub fn parse_using<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<NamespaceDecl<'a>>, ParserError<'a>> {
+    let peek = tokenizer.peek(0)?;
+    let TokenKind::Keyword(Keyword::Using) = peek.kind else {
+        return Ok(None);
+    };
+    tokenizer.next()?;
+    let start = peek.slice;
+
+    let peek = tokenizer.peek(0)?;
+    let Some(path) = IdentPath::try_parse(tokenizer)? else {
+        return Err(ParserError::unexpected_token(peek));
+    };
+
+    let next = tokenizer.next()?;
+    let TokenKind::Symbol(Symbol::Semicolon) = next.kind else {
+        return Err(ParserError::unexpected_token(next));
+    };
+
+    return Ok(Some(NamespaceDecl {
+        slice: start.merge(next.slice),
+        path,
+    }));
+}
+
+pub fn parse_namespace<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<NamespaceDecl<'a>>, ParserError<'a>> {
+    let peek = tokenizer.peek(0)?;
+    let TokenKind::Keyword(Keyword::Namespace) = peek.kind else {
+        return Ok(None);
+    };
+    tokenizer.next()?;
+    let start = peek.slice;
+
+    let peek = tokenizer.peek(0)?;
+    let Some(path) = IdentPath::try_parse(tokenizer)? else {
+        return Err(ParserError::unexpected_token(peek));
+    };
+
+    let next = tokenizer.next()?;
+    let TokenKind::Symbol(Symbol::Semicolon) = next.kind else {
+        return Err(ParserError::unexpected_token(next));
+    };
+
+    return Ok(Some(NamespaceDecl {
+        slice: start.merge(next.slice),
+        path,
+    }));
+}
+
+pub fn parse_impl_decl<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<ImplDecl<'a>>, ParserError<'a>> {
+    let peek = tokenizer.peek(0)?;
+    let TokenKind::Keyword(Keyword::Impl) = peek.kind else {
+        return Ok(None);
+    };
+    tokenizer.next()?;
+    let start = peek.slice;
+
+    let tr = parse_type(tokenizer)?;
+
+    let next = tokenizer.next()?;
+    let TokenKind::Keyword(Keyword::For) = next.kind else {
+        return Err(ParserError::unexpected_token(next));
+    };
+
+    let ty = parse_type(tokenizer)?;
+
+    let body = parse_trait_body(tokenizer)?;
+
+    return Ok(Some(ImplDecl {
+        slice: start.merge(body.slice),
+        tr,
+        ty,
+        body,
+    }));
+}
+
+pub fn parse_trait_decl<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<TraitDecl<'a>>, ParserError<'a>> {
+    let peek = tokenizer.peek(0)?;
+    let TokenKind::Keyword(Keyword::Trait) = peek.kind else {
+        return Ok(None);
+    };
+    tokenizer.next()?;
+    let start = peek.slice;
+
+    let next = tokenizer.next()?;
+    let TokenKind::Identifier(name) = next.kind else {
+        return Err(ParserError::unexpected_token(next));
+    };
+
+    let body = parse_trait_body(tokenizer)?;
+
+    return Ok(Some(TraitDecl {
+        slice: start.merge(body.slice),
+        name,
+        body,
+    }));
+}
+
+pub fn parse_union_decl<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<UnionDecl<'a>>, ParserError<'a>> {
+    let peek = tokenizer.peek(0)?;
+    let TokenKind::Keyword(Keyword::Enum) = peek.kind else {
+        return Ok(None);
+    };
+    tokenizer.next()?;
+    let start = peek.slice;
+
+    let next = tokenizer.next()?;
+    let TokenKind::Identifier(name) = next.kind else {
+        return Err(ParserError::unexpected_token(next));
+    };
+
+    let body = parse_struct_body(tokenizer)?;
+
+    return Ok(Some(UnionDecl {
+        slice: start.merge(body.slice),
+        name,
+        body,
+    }));
+}
+
+pub fn parse_enum_decl<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<EnumDecl<'a>>, ParserError<'a>> {
+    let peek = tokenizer.peek(0)?;
+    let TokenKind::Keyword(Keyword::Enum) = peek.kind else {
+        return Ok(None);
+    };
+    tokenizer.next()?;
+    let start = peek.slice;
+
+    let next = tokenizer.next()?;
+    let TokenKind::Identifier(name) = next.kind else {
+        return Err(ParserError::unexpected_token(next));
+    };
+
+    let peek = tokenizer.peek(0)?;
+
+    if let TokenKind::Symbol(Symbol::Colon) = peek.kind {
+        tokenizer.next()?;
+        let next = tokenizer.next()?;
+        let Some(ty) = IntEnumType::from(next.kind.clone()) else {
+            return Err(ParserError::unexpected_token(next));
         };
+
+        let body = parse_int_enum_body(tokenizer)?;
+
+        return Ok(Some(EnumDecl {
+            slice: start.merge(body.slice),
+            name,
+            kind: EnumDeclKind::Int { ty, body },
+        }));
     }
+
+    let body = parse_struct_body(tokenizer)?;
+
+    return Ok(Some(EnumDecl {
+        slice: start.merge(body.slice),
+        name,
+        kind: EnumDeclKind::Value(body),
+    }));
+}
+
+pub fn parse_struct_decl<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<StructDecl<'a>>, ParserError<'a>> {
+    let peek = tokenizer.peek(0)?;
+    let TokenKind::Keyword(Keyword::Struct) = peek.kind else {
+        return Ok(None);
+    };
+    tokenizer.next()?;
+    let start = peek.slice;
+
+    let next = tokenizer.next()?;
+    let TokenKind::Identifier(name) = next.kind else {
+        return Err(ParserError::unexpected_token(next));
+    };
+
+    if let Some(ty) = parse_type_annotation(tokenizer)? {
+        let next = tokenizer.next()?;
+        let TokenKind::Symbol(Symbol::Semicolon) = next.kind else {
+            return Err(ParserError::unexpected_token(next));
+        };
+        return Ok(Some(StructDecl {
+            slice: start.merge(next.slice),
+            name,
+            kind: StructDeclKind::Wrapper(ty),
+        }));
+    }
+
+    let body = parse_struct_body(tokenizer)?;
+
+    return Ok(Some(StructDecl {
+        slice: start.merge(body.slice),
+        name,
+        kind: StructDeclKind::Value(body),
+    }));
+}
+
+pub fn parse_func_decl<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<FunctionDecl<'a>>, ParserError<'a>> {
+    let peek = tokenizer.peek(0)?;
+
+    let modifier = match peek.kind {
+        TokenKind::Keyword(Keyword::Const) => {
+            let peek = tokenizer.peek(1)?;
+            let TokenKind::Keyword(Keyword::Func) = peek.kind else {
+                return Ok(None);
+            };
+            tokenizer.next()?;
+            FunctionModifier::ConstFunc
+        }
+        TokenKind::Keyword(Keyword::Func) => FunctionModifier::Func,
+        _ => return Ok(None),
+    };
+    tokenizer.next()?;
+
+    let start = peek.slice;
+
+    let ident = tokenizer.next()?;
+
+    let TokenKind::Identifier(name) = ident.kind else {
+        return Err(ParserError::unexpected_token(ident));
+    };
+
+    let next = tokenizer.next()?;
+    let TokenKind::Symbol(Symbol::ParenOpen) = next.kind else {
+        return Err(ParserError::unexpected_token(peek));
+    };
+
+    let this_param = parse_this_param(tokenizer)?;
+
+    if this_param.is_some()
+        && let TokenKind::Symbol(Symbol::Comma) = tokenizer.peek(0)?.kind
+    {
+        tokenizer.next()?;
+    }
+
+    let mut params = vec![];
+
+    let peek = tokenizer.peek(0)?;
+
+    match peek.kind {
+        TokenKind::Symbol(Symbol::ParenClose) => {
+            tokenizer.next()?;
+        }
+        _ => loop {
+            let peek = tokenizer.peek(0)?;
+
+            let start = peek.slice;
+
+            let is_mut = if let TokenKind::Keyword(Keyword::Mut) = peek.kind {
+                tokenizer.next()?;
+                true
+            } else {
+                false
+            };
+
+            let next = tokenizer.next()?;
+
+            let TokenKind::Identifier(name) = next.kind else {
+                return Err(ParserError::unexpected_token(next));
+            };
+
+            let next = tokenizer.next()?;
+
+            let TokenKind::Symbol(Symbol::Colon) = next.kind else {
+                return Err(ParserError::unexpected_token(next));
+            };
+
+            let ty = parse_type(tokenizer)?;
+
+            params.push(FuncParam {
+                slice: start.merge(ty.slice),
+                is_mut,
+                name,
+                ty,
+            });
+
+            let next = tokenizer.next()?;
+
+            match next.kind {
+                TokenKind::Symbol(Symbol::Comma) => {
+                    if let TokenKind::Symbol(Symbol::ParenClose) = tokenizer.peek(0)?.kind {
+                        tokenizer.next()?;
+                        break;
+                    }
+                }
+                TokenKind::Symbol(Symbol::ParenClose) => break,
+                _ => return Err(ParserError::unexpected_token(next)),
+            }
+        },
+    }
+
+    let ret = parse_type_annotation(tokenizer)?;
+
+    let peek = tokenizer.peek(0)?;
+
+    let (body, end) = match peek.kind {
+        TokenKind::Symbol(Symbol::WideArrow | Symbol::BraceOpen) => {
+            let body = parse_func_body(tokenizer, Some(Symbol::Semicolon))?;
+            let slice = body.slice;
+            (Some(body), slice)
+        }
+        TokenKind::Symbol(Symbol::Semicolon) => {
+            tokenizer.next()?;
+            (None, peek.slice)
+        }
+        _ => return Err(ParserError::unexpected_token(peek)),
+    };
+
+    return Ok(Some(FunctionDecl {
+        slice: start.merge(end),
+        modifier,
+        name,
+        this_param,
+        params,
+        ret,
+        body,
+    }));
+}
+
+pub fn parse_var_decl<'a>(
+    tokenizer: &mut Tokenizer<'a>,
+) -> Result<Option<VariableDecl<'a>>, ParserError<'a>> {
+    let peek = tokenizer.peek(0)?;
+
+    let modifier = match peek.kind {
+        TokenKind::Keyword(Keyword::Let) => {
+            if let TokenKind::Keyword(Keyword::Match) = tokenizer.peek(1)?.kind {
+                return Ok(None);
+            }
+            VariableModifier::Let
+        }
+        TokenKind::Keyword(Keyword::Const) => {
+            if let TokenKind::Keyword(Keyword::Func) = tokenizer.peek(1)?.kind {
+                return Ok(None);
+            }
+            VariableModifier::Const
+        }
+        TokenKind::Keyword(Keyword::Mut) => VariableModifier::Mut,
+        TokenKind::Keyword(Keyword::Static) => VariableModifier::Static,
+        _ => return Ok(None),
+    };
+
+    let start = peek.slice;
 
     tokenizer.next()?;
 
-    if let Some(modifier) = decl.try_into_var() {
-        return Ok(Some(parse_var_decl(
-            tokenizer, slice, attrs, generics, modifier, is_pub,
-        )?));
-    }
+    let ident = tokenizer.next()?;
 
-    if let Some(modifier) = decl.try_into_func() {
-        return Ok(Some(parse_func_decl(
-            tokenizer, slice, attrs, generics, modifier, is_pub,
-        )?));
-    }
+    let name = match ident.kind {
+        TokenKind::Identifier(ident) => VariableName::Identifier(ident),
+        TokenKind::Keyword(Keyword::Discard) => VariableName::Discard,
+        _ => return Err(ParserError::unexpected_token(ident)),
+    };
 
-    if let DeclKeyword::Struct = decl {
-        return Ok(Some(parse_struct_decl(
-            tokenizer, slice, attrs, generics, is_pub,
-        )?));
-    }
+    let ty = parse_type_annotation(tokenizer)?;
 
-    if let DeclKeyword::Enum = decl {
-        return Ok(Some(parse_enum_decl(
-            tokenizer, slice, attrs, generics, is_pub,
-        )?));
-    }
+    let next = tokenizer.next()?;
 
-    panic!("Impossible state");
+    match next.kind {
+        TokenKind::Symbol(Symbol::Assign) => {
+            let peek = tokenizer.peek(0)?;
+            let Some(expr) = parse_expr(tokenizer)? else {
+                return Err(ParserError::unexpected_token(peek));
+            };
+
+            let next = tokenizer.next()?;
+            let TokenKind::Symbol(Symbol::Semicolon) = next.kind else {
+                return Err(ParserError::unexpected_token(next));
+            };
+
+            return Ok(Some(VariableDecl {
+                slice: start.merge(next.slice),
+                modifier,
+                name,
+                ty,
+                init: Some(expr),
+            }));
+        }
+        TokenKind::Symbol(Symbol::Semicolon) => {
+            return Ok(Some(VariableDecl {
+                slice: start.merge(next.slice),
+                modifier,
+                name,
+                ty,
+                init: None,
+            }))
+        }
+        _ => return Err(ParserError::unexpected_token(next)),
+    };
 }
 
 fn parse_attrs<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Attrs<'a>>, ParserError<'a>> {
@@ -153,7 +657,7 @@ fn parse_attr<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Attr<'a>, ParserError
     });
 }
 
-fn parse_generic_list<'a>(
+fn parse_generics_decl<'a>(
     tokenizer: &mut Tokenizer<'a>,
 ) -> Result<Option<GenericsDecl<'a>>, ParserError<'a>> {
     let peek = tokenizer.peek(0)?;
@@ -257,53 +761,48 @@ fn parse_type_clause<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<TypeClause<'a>
     };
 }
 
-fn parse_enum_decl<'a>(
+pub fn parse_trait_body<'a>(
     tokenizer: &mut Tokenizer<'a>,
-    slice: StringSlice<'a>,
-    attrs: Option<Attrs<'a>>,
-    generics: Option<GenericsDecl<'a>>,
-    is_pub: bool,
-) -> DeclResult<'a> {
-    let ident = tokenizer.next()?;
-
-    let TokenKind::Identifier(name) = ident.kind else {
-        return Err(ParserError::unexpected_token(ident));
+) -> Result<TraitBody<'a>, ParserError<'a>> {
+    let next = tokenizer.peek(0)?;
+    let TokenKind::Symbol(Symbol::BraceOpen) = next.kind else {
+        return Err(ParserError::unexpected_token(next));
     };
+    tokenizer.next()?;
 
-    let peek = tokenizer.peek(0)?;
+    let start = next.slice;
 
-    match peek.kind {
-        TokenKind::Symbol(Symbol::Colon) => {
+    let mut decls = vec![];
+
+    if let TokenKind::Symbol(Symbol::BraceClose) = tokenizer.peek(0)?.kind {
+        tokenizer.next()?;
+
+        let last = tokenizer.next()?.slice;
+
+        return Ok(TraitBody {
+            slice: start.merge(last),
+            decls,
+        });
+    }
+
+    loop {
+        let peek = tokenizer.peek(0)?;
+        let Some(decl) = parse_lvl_3_decl(tokenizer)? else {
+            return Err(ParserError::unexpected_token(peek));
+        };
+
+        decls.push(decl);
+
+        if let TokenKind::Symbol(Symbol::BraceClose) = tokenizer.peek(0)?.kind {
             tokenizer.next()?;
 
-            let next = tokenizer.next()?;
+            let last = tokenizer.next()?.slice;
 
-            let Some(ty) = IntEnumType::from(next.kind.clone()) else {
-                return Err(ParserError::unexpected_token(next));
-            };
-
-            let body = parse_int_enum_body(tokenizer)?;
-
-            return Ok(Decl {
-                slice: slice.merge(body.slice),
-                attrs,
-                generics,
-                is_pub,
-                kind: DeclKind::IntEnum { name, ty, body },
+            return Ok(TraitBody {
+                slice: start.merge(last),
+                decls,
             });
         }
-        TokenKind::Symbol(Symbol::BraceOpen) => {
-            let body = parse_struct_body(tokenizer)?;
-
-            return Ok(Decl {
-                slice: slice.merge(body.slice),
-                attrs,
-                generics,
-                is_pub,
-                kind: DeclKind::Enum { name, body },
-            });
-        }
-        _ => return Err(ParserError::unexpected_token(peek)),
     }
 }
 
@@ -383,52 +882,6 @@ pub fn parse_int_enum_body<'a>(
     });
 }
 
-fn parse_struct_decl<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-    slice: StringSlice<'a>,
-    attrs: Option<Attrs<'a>>,
-    generics: Option<GenericsDecl<'a>>,
-    is_pub: bool,
-) -> DeclResult<'a> {
-    let ident = tokenizer.next()?;
-
-    let TokenKind::Identifier(name) = ident.kind else {
-        return Err(ParserError::unexpected_token(ident));
-    };
-
-    let peek = tokenizer.peek(0)?;
-
-    match peek.kind {
-        TokenKind::Symbol(Symbol::Colon) => {
-            tokenizer.next()?;
-            let ty = parse_type(tokenizer)?;
-            let next = tokenizer.next()?;
-            let TokenKind::Symbol(Symbol::Semicolon) = next.kind else {
-                return Err(ParserError::unexpected_token(next));
-            };
-            return Ok(Decl {
-                slice: slice.merge(next.slice),
-                attrs,
-                generics,
-                is_pub,
-                kind: DeclKind::WrapperStruct { name, ty },
-            });
-        }
-        TokenKind::Symbol(Symbol::BraceOpen) => {
-            let body = parse_struct_body(tokenizer)?;
-
-            return Ok(Decl {
-                slice: slice.merge(body.slice),
-                attrs,
-                generics,
-                is_pub,
-                kind: DeclKind::Struct { name, body },
-            });
-        }
-        _ => return Err(ParserError::unexpected_token(peek)),
-    }
-}
-
 pub fn parse_struct_body<'a>(
     tokenizer: &mut Tokenizer<'a>,
 ) -> Result<StructBody<'a>, ParserError<'a>> {
@@ -502,129 +955,6 @@ pub fn parse_struct_body<'a>(
         slice: start.merge(last),
         params,
     });
-}
-
-fn parse_func_decl<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-    slice: StringSlice<'a>,
-    attrs: Option<Attrs<'a>>,
-    generics: Option<GenericsDecl<'a>>,
-    modifier: FunctionModifier,
-    is_pub: bool,
-) -> DeclResult<'a> {
-    let ident = tokenizer.next()?;
-
-    let TokenKind::Identifier(name) = ident.kind else {
-        return Err(ParserError::unexpected_token(ident));
-    };
-
-    let peek = tokenizer.next()?;
-
-    let TokenKind::Symbol(Symbol::ParenOpen) = peek.kind else {
-        return Err(ParserError::unexpected_token(peek));
-    };
-
-    let this_param = parse_this_param(tokenizer)?;
-
-    if this_param.is_some()
-        && let TokenKind::Symbol(Symbol::Comma) = tokenizer.peek(0)?.kind
-    {
-        tokenizer.next()?;
-    }
-
-    let mut params = vec![];
-
-    let peek = tokenizer.peek(0)?;
-
-    match peek.kind {
-        TokenKind::Symbol(Symbol::ParenClose) => _ = tokenizer.next()?,
-        _ => loop {
-            let peek = tokenizer.peek(0)?;
-
-            let start = peek.slice;
-
-            let is_mut = if let TokenKind::Keyword(Keyword::Mut) = peek.kind {
-                tokenizer.next()?;
-                true
-            } else {
-                false
-            };
-
-            let next = tokenizer.next()?;
-
-            let TokenKind::Identifier(name) = next.kind else {
-                return Err(ParserError::unexpected_token(next));
-            };
-
-            let next = tokenizer.next()?;
-
-            let TokenKind::Symbol(Symbol::Colon) = next.kind else {
-                return Err(ParserError::unexpected_token(next));
-            };
-
-            let ty = parse_type(tokenizer)?;
-
-            params.push(FuncParam {
-                slice: start.merge(ty.slice),
-                is_mut,
-                name,
-                ty,
-            });
-
-            let next = tokenizer.next()?;
-
-            match next.kind {
-                TokenKind::Symbol(Symbol::Comma) => {
-                    if let TokenKind::Symbol(Symbol::ParenClose) = tokenizer.peek(0)?.kind {
-                        tokenizer.next()?;
-                        break;
-                    }
-                }
-                TokenKind::Symbol(Symbol::ParenClose) => break,
-                _ => return Err(ParserError::unexpected_token(next)),
-            }
-        },
-    }
-
-    let next = tokenizer.peek(0)?;
-
-    let ret = if let TokenKind::Symbol(Symbol::Colon) = next.kind {
-        tokenizer.next()?;
-        Some(parse_type(tokenizer)?)
-    } else {
-        None
-    };
-
-    let peek = tokenizer.peek(0)?;
-    let mut end = peek.slice;
-
-    let body = match peek.kind {
-        TokenKind::Symbol(Symbol::WideArrow | Symbol::BraceOpen) => {
-            let body = parse_func_body(tokenizer, Some(Symbol::Semicolon))?;
-            end = body.slice;
-            Some(body)
-        }
-        TokenKind::Symbol(Symbol::Semicolon) => {
-            tokenizer.next()?;
-            None
-        }
-        _ => return Err(ParserError::unexpected_token(peek)),
-    };
-
-    Ok(Decl {
-        slice: slice.merge(end),
-        attrs,
-        generics,
-        is_pub,
-        kind: DeclKind::Function {
-            modifier,
-            name,
-            this_param,
-            params,
-            ret,
-            body,
-        },
-    })
 }
 
 pub fn parse_func_body<'a>(
@@ -705,79 +1035,14 @@ fn parse_this_param<'a>(
     }));
 }
 
-fn parse_var_decl<'a>(
+fn parse_type_annotation<'a>(
     tokenizer: &mut Tokenizer<'a>,
-    slice: StringSlice<'a>,
-    attrs: Option<Attrs<'a>>,
-    generics: Option<GenericsDecl<'a>>,
-    modifier: VariableModifier,
-    is_pub: bool,
-) -> DeclResult<'a> {
-    let ident = tokenizer.next()?;
-
-    let name = match ident.kind {
-        TokenKind::Identifier(ident) => VariableName::Identifier(ident),
-        TokenKind::Keyword(Keyword::Discard) => VariableName::Discard,
-        _ => return Err(ParserError::unexpected_token(ident)),
+) -> Result<Option<Type<'a>>, ParserError<'a>> {
+    let peek = tokenizer.peek(0)?;
+    let TokenKind::Symbol(Symbol::Colon) = peek.kind else {
+        return Ok(None);
     };
+    tokenizer.next()?;
 
-    let mut peek = tokenizer.peek(0)?;
-
-    let mut ty = None;
-
-    let end = if let TokenKind::Symbol(Symbol::Colon) = peek.kind {
-        tokenizer.next()?;
-        let parsed = parse_type(tokenizer)?;
-        ty = Some(parsed.clone());
-        peek = tokenizer.peek(0)?;
-        parsed.slice
-    } else {
-        peek.slice
-    };
-
-    match peek.kind {
-        TokenKind::Symbol(Symbol::Assign) => {
-            tokenizer.next()?;
-            let Some(expr) = parse_expr(tokenizer)? else {
-                return Err(ParserError::unexpected_token(tokenizer.peek(0)?));
-            };
-
-            let peek = tokenizer.peek(0)?;
-            let end = peek.slice;
-
-            let TokenKind::Symbol(Symbol::Semicolon) = peek.kind else {
-                return Err(ParserError::unexpected_token(peek));
-            };
-            tokenizer.next()?;
-
-            return Ok(Decl {
-                slice: slice.merge(end),
-                attrs,
-                generics,
-                is_pub,
-                kind: DeclKind::Variable {
-                    modifier,
-                    name,
-                    ty,
-                    init: Some(expr),
-                },
-            });
-        }
-        TokenKind::Symbol(Symbol::Semicolon) => {
-            tokenizer.next()?;
-            return Ok(Decl {
-                slice: slice.merge(end),
-                attrs,
-                generics,
-                is_pub,
-                kind: DeclKind::Variable {
-                    modifier,
-                    name,
-                    ty,
-                    init: None,
-                },
-            });
-        }
-        _ => return Err(ParserError::unexpected_token(peek)),
-    }
+    return Ok(Some(parse_type(tokenizer)?));
 }

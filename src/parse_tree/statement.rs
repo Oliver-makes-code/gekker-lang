@@ -1,6 +1,6 @@
 use crate::string::StringSlice;
 
-use super::{decl::Decl, expr::Expr, pattern::Pattern};
+use super::{decl::VariableDecl, expr::Expr, pattern::Pattern};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Statement<'a> {
@@ -16,7 +16,7 @@ pub struct Block<'a> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum StatementKind<'a> {
-    Decl(Decl<'a>),
+    Decl(VariableDecl<'a>),
     Expr(Expr<'a>),
     If(IfStatement<'a>),
     LetMatchElse(LetMatchElseStatement<'a>),

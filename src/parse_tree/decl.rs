@@ -1,60 +1,154 @@
+use std::fmt::Debug;
+
 use crate::{
     string::StringSlice,
-    tokenizer::{
-        token::{Keyword, TokenKind},
-        Tokenizer,
-    },
+    tokenizer::token::{Keyword, TokenKind},
 };
 
 use super::{
     expr::Expr,
-    parse::error::ParserError,
     statement::{Block, FunctionModifier, VariableModifier, VariableName},
     types::{RefKind, Type},
+    IdentPath,
 };
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Decl<'a> {
+pub struct DeclModifier<'a, T>
+where
+    T: Debug + Clone + PartialEq,
+{
     pub slice: StringSlice<'a>,
     pub attrs: Option<Attrs<'a>>,
     pub generics: Option<GenericsDecl<'a>>,
     pub is_pub: bool,
-    pub kind: DeclKind<'a>,
+    pub value: T,
+}
+
+/// Allowed in top-level code
+#[derive(Debug, Clone, PartialEq)]
+pub struct DeclLvl1<'a> {
+    pub slice: StringSlice<'a>,
+    pub kind: DeclLvl1Kind<'a>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum DeclKind<'a> {
-    Variable {
-        modifier: VariableModifier,
-        name: VariableName<'a>,
-        ty: Option<Type<'a>>,
-        init: Option<Expr<'a>>,
-    },
-    Function {
-        modifier: FunctionModifier,
-        name: &'a str,
-        this_param: Option<ThisParam<'a>>,
-        params: Vec<FuncParam<'a>>,
-        ret: Option<Type<'a>>,
-        body: Option<FuncBody<'a>>,
-    },
-    Enum {
-        name: &'a str,
-        body: StructBody<'a>,
-    },
-    IntEnum {
-        name: &'a str,
+pub enum DeclLvl1Kind<'a> {
+    Namespace(NamespaceDecl<'a>),
+    Using(NamespaceDecl<'a>),
+    Lvl2(DeclModifier<'a, DeclLvl2<'a>>),
+}
+
+/// Allowed to be public, have properties, and have generics
+#[derive(Debug, Clone, PartialEq)]
+pub struct DeclLvl2<'a> {
+    pub slice: StringSlice<'a>,
+    pub kind: DeclLvl2Kind<'a>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum DeclLvl2Kind<'a> {
+    Enum(EnumDecl<'a>),
+    Union(UnionDecl<'a>),
+    Struct(StructDecl<'a>),
+    Trait(TraitDecl<'a>),
+    Impl(ImplDecl<'a>),
+    Lvl3(DeclLvl3<'a>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct NamespaceDecl<'a> {
+    pub slice: StringSlice<'a>,
+    pub path: IdentPath<'a>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ImplDecl<'a> {
+    pub slice: StringSlice<'a>,
+    pub tr: Type<'a>,
+    pub ty: Type<'a>,
+    pub body: TraitBody<'a>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct TraitDecl<'a> {
+    pub slice: StringSlice<'a>,
+    pub name: &'a str,
+    pub body: TraitBody<'a>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct TraitBody<'a> {
+    pub slice: StringSlice<'a>,
+    pub decls: Vec<DeclModifier<'a, DeclLvl3<'a>>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct UnionDecl<'a> {
+    pub slice: StringSlice<'a>,
+    pub name: &'a str,
+    pub body: StructBody<'a>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct EnumDecl<'a> {
+    pub slice: StringSlice<'a>,
+    pub name: &'a str,
+    pub kind: EnumDeclKind<'a>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum EnumDeclKind<'a> {
+    Int {
         ty: IntEnumType,
         body: IntEnumBody<'a>,
     },
-    Struct {
-        name: &'a str,
-        body: StructBody<'a>,
-    },
-    WrapperStruct {
-        name: &'a str,
-        ty: Type<'a>,
-    },
+    Value(StructBody<'a>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct StructDecl<'a> {
+    pub slice: StringSlice<'a>,
+    pub name: &'a str,
+    pub kind: StructDeclKind<'a>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum StructDeclKind<'a> {
+    Wrapper(Type<'a>),
+    Value(StructBody<'a>),
+}
+
+/// Allowed in top-level code and trait impls
+#[derive(Debug, Clone, PartialEq)]
+pub struct DeclLvl3<'a> {
+    pub slice: StringSlice<'a>,
+    pub kind: DeclLvl3Kind<'a>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum DeclLvl3Kind<'a> {
+    Function(FunctionDecl<'a>),
+    Variable(VariableDecl<'a>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FunctionDecl<'a> {
+    pub slice: StringSlice<'a>,
+    pub modifier: FunctionModifier,
+    pub name: &'a str,
+    pub this_param: Option<ThisParam<'a>>,
+    pub params: Vec<FuncParam<'a>>,
+    pub ret: Option<Type<'a>>,
+    pub body: Option<FuncBody<'a>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct VariableDecl<'a> {
+    pub slice: StringSlice<'a>,
+    pub modifier: VariableModifier,
+    pub name: VariableName<'a>,
+    pub ty: Option<Type<'a>>,
+    pub init: Option<Expr<'a>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -160,81 +254,6 @@ pub struct IntEnumParam<'a> {
     pub slice: StringSlice<'a>,
     pub name: &'a str,
     pub value: Option<Expr<'a>>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DeclKeyword {
-    Let,
-    Mut,
-    Const,
-    Static,
-    Func,
-    ConstFunc,
-    Struct,
-    Enum,
-}
-
-impl DeclKeyword {
-    pub fn try_parse<'a>(
-        tokenizer: &mut Tokenizer<'a>,
-    ) -> Result<Option<(bool, Self)>, ParserError<'a>> {
-        let peek = tokenizer.peek(0)?;
-
-        let is_pub = if let TokenKind::Keyword(Keyword::Pub) = peek.kind {
-            tokenizer.next()?;
-            true
-        } else {
-            false
-        };
-
-        let peek = tokenizer.peek(0)?;
-
-        let decl = match peek.kind {
-            TokenKind::Keyword(Keyword::Let) => Self::Let,
-            TokenKind::Keyword(Keyword::Mut) => Self::Mut,
-            TokenKind::Keyword(Keyword::Static) => Self::Static,
-            TokenKind::Keyword(Keyword::Func) => Self::Func,
-            TokenKind::Keyword(Keyword::Struct) => Self::Struct,
-            TokenKind::Keyword(Keyword::Enum) => Self::Enum,
-            TokenKind::Keyword(Keyword::Const) => {
-                let next = tokenizer.peek(1)?;
-
-                if let TokenKind::Keyword(Keyword::Func) = next.kind {
-                    tokenizer.next()?;
-                    return Ok(Some((is_pub, Self::ConstFunc)));
-                }
-
-                return Ok(Some((is_pub, Self::Const)));
-            }
-            _ => {
-                if is_pub {
-                    return Err(ParserError::unexpected_token(peek));
-                }
-
-                return Ok(None);
-            }
-        };
-
-        return Ok(Some((is_pub, decl)));
-    }
-
-    pub fn try_into_var(self) -> Option<VariableModifier> {
-        return Some(match self {
-            Self::Let => VariableModifier::Let,
-            Self::Mut => VariableModifier::Mut,
-            Self::Const => VariableModifier::Const,
-            Self::Static => VariableModifier::Static,
-            _ => return None,
-        });
-    }
-
-    pub fn try_into_func(self) -> Option<FunctionModifier> {
-        return Some(match self {
-            Self::Func => FunctionModifier::Func,
-            Self::ConstFunc => FunctionModifier::ConstFunc,
-            _ => return None,
-        });
-    }
 }
 
 impl IntEnumType {

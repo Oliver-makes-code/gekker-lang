@@ -36,10 +36,12 @@ pub enum Keyword {
     Ref,
     Struct,
     Enum,
+    Trait,
     Impl,
     Operator,
     Where,
     Namespace,
+    Union,
 
     // Builtin types
     Bool,
@@ -193,10 +195,12 @@ impl Keyword {
             "ref" => Self::Ref,
             "struct" => Self::Struct,
             "enum" => Self::Enum,
+            "trait" => Self::Trait,
             "impl" => Self::Impl,
             "operator" => Self::Operator,
             "where" => Self::Where,
             "namespace" => Self::Namespace,
+            "union" => Self::Union,
 
             "bool" => Self::Bool,
             "char" => Self::Char,

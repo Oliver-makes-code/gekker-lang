@@ -89,6 +89,9 @@ let sixteenInts: [i32, 16];
 let someIntArr: ref [i32] = ref sixteenInts;
 ```
 
+There's also the built-in `str` type, which is internally a `[u8]`.
+
+
 ### Function types
 
 There's function types, which are defined similarly to Rust function types, but

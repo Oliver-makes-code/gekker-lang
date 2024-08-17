@@ -1,6 +1,0 @@
-{   
-    return;
-    return 5;
-    return if (true);
-    return 5 if (true);
-}

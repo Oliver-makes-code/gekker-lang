@@ -1,5 +1,7 @@
+use std::fmt::Debug;
+
+use decl::DeclLvl1;
 use parse::error::ParserError;
-use top_level::TopLevelStatement;
 
 use crate::{
     string::StringSlice,
@@ -14,13 +16,12 @@ pub mod expr;
 pub mod parse;
 pub mod pattern;
 pub mod statement;
-pub mod top_level;
 pub mod types;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ParseTree<'a> {
     pub slice: StringSlice<'a>,
-    pub statements: Vec<TopLevelStatement<'a>>,
+    pub body: Vec<DeclLvl1<'a>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

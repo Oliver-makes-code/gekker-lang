@@ -16,7 +16,7 @@ use crate::{
     },
 };
 
-use super::{decl::parse_decl, error::ParserError};
+use super::{decl::parse_var_decl, error::ParserError};
 
 type StatementResult<'a> = Result<Option<Statement<'a>>, ParserError<'a>>;
 
@@ -42,7 +42,7 @@ pub fn parse_statement<'a>(tokenizer: &mut Tokenizer<'a>) -> StatementResult<'a>
         }));
     }
 
-    if let Some(decl) = parse_decl(tokenizer)? {
+    if let Some(decl) = parse_var_decl(tokenizer)? {
         return Ok(Some(Statement {
             slice: decl.slice,
             kind: StatementKind::Decl(decl),

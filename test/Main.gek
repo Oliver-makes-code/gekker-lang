@@ -1,0 +1,7 @@
+namespace Wawa::Test;
+
+using X::Y;
+
+func Main(args: ref [ref str]): i32 {
+    return 0;
+}
