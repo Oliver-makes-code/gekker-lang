@@ -1,15 +1,17 @@
+use std::sync::Arc;
+
 use crate::string::{parser::StringParser, StringSlice};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Token<'a> {
-    pub slice: StringSlice<'a>,
-    pub kind: TokenKind<'a>,
+pub struct Token {
+    pub slice: StringSlice,
+    pub kind: TokenKind,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum TokenKind<'a> {
-    Identifier(&'a str),
-    String(String),
+pub enum TokenKind {
+    Identifier(Arc<str>),
+    String(Arc<str>),
     Char(char),
     Number(Number),
     Symbol(Symbol),
@@ -250,7 +252,7 @@ impl Keyword {
 }
 
 impl Symbol {
-    pub fn from<'a>(parser: &mut StringParser<'a>) -> Option<(StringSlice<'a>, Self)> {
+    pub fn from(parser: &mut StringParser) -> Option<(StringSlice, Self)> {
         symbol_match!(parser,
             "..." => Self::Rest,
 

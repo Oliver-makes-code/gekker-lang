@@ -18,40 +18,40 @@ use crate::{
 
 use super::{decl::parse_var_decl, error::ParserError};
 
-type StatementResult<'a> = Result<Option<Statement<'a>>, ParserError<'a>>;
+type StatementResult = Result<Option<Statement>, ParserError>;
 
-pub fn parse_statement<'a>(tokenizer: &mut Tokenizer<'a>) -> StatementResult<'a> {
+pub fn parse_statement(tokenizer: &mut Tokenizer) -> StatementResult {
     if let Some(ret) = parse_return(tokenizer)? {
         return Ok(Some(Statement {
-            slice: ret.slice,
+            slice: ret.slice.clone(),
             kind: StatementKind::Return(ret),
         }));
     }
 
     if let Some(let_match_else) = parse_let_match_else(tokenizer)? {
         return Ok(Some(Statement {
-            slice: let_match_else.slice,
+            slice: let_match_else.slice.clone(),
             kind: StatementKind::LetMatchElse(let_match_else),
         }));
     }
 
     if let Some(mat) = parse_match(tokenizer)? {
         return Ok(Some(Statement {
-            slice: mat.slice,
+            slice: mat.slice.clone(),
             kind: StatementKind::Match(mat),
         }));
     }
 
     if let Some(decl) = parse_var_decl(tokenizer)? {
         return Ok(Some(Statement {
-            slice: decl.slice,
+            slice: decl.slice.clone(),
             kind: StatementKind::Decl(decl),
         }));
     }
 
     if let Some(expr) = expr::parse_expr(tokenizer)? {
         let peek = tokenizer.peek(0)?;
-        let end = peek.slice;
+        let end = peek.slice.clone();
 
         let TokenKind::Symbol(Symbol::Semicolon) = peek.kind else {
             return Err(ParserError::unexpected_token(peek));
@@ -59,14 +59,14 @@ pub fn parse_statement<'a>(tokenizer: &mut Tokenizer<'a>) -> StatementResult<'a>
         tokenizer.next()?;
 
         return Ok(Some(Statement {
-            slice: expr.slice.merge(end),
+            slice: expr.slice.merge(&end),
             kind: StatementKind::Expr(expr),
         }));
     }
 
     if let Some(if_statement) = parse_if_statement(tokenizer)? {
         return Ok(Some(Statement {
-            slice: if_statement.slice,
+            slice: if_statement.slice.clone(),
             kind: StatementKind::If(if_statement),
         }));
     }
@@ -74,9 +74,7 @@ pub fn parse_statement<'a>(tokenizer: &mut Tokenizer<'a>) -> StatementResult<'a>
     return Ok(None);
 }
 
-pub fn parse_block<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<Block<'a>>, ParserError<'a>> {
+pub fn parse_block(tokenizer: &mut Tokenizer) -> Result<Option<Block>, ParserError> {
     let peek = tokenizer.peek(0)?;
 
     let TokenKind::Symbol(Symbol::BraceOpen) = peek.kind else {
@@ -91,7 +89,7 @@ pub fn parse_block<'a>(
     if let TokenKind::Symbol(Symbol::BraceClose) = peek.kind {
         tokenizer.next()?;
         return Ok(Some(Block {
-            slice: start.merge(peek.slice),
+            slice: start.merge(&peek.slice),
             statements: vec![],
         }));
     }
@@ -113,16 +111,14 @@ pub fn parse_block<'a>(
             let end = next.slice;
 
             return Ok(Some(Block {
-                slice: start.merge(end),
+                slice: start.merge(&end),
                 statements,
             }));
         }
     }
 }
 
-fn parse_return<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<ReturnStatement<'a>>, ParserError<'a>> {
+fn parse_return(tokenizer: &mut Tokenizer) -> Result<Option<ReturnStatement>, ParserError> {
     let peek = tokenizer.peek(0)?;
     let TokenKind::Keyword(Keyword::Return) = peek.kind else {
         return Ok(None);
@@ -162,15 +158,13 @@ fn parse_return<'a>(
     };
 
     return Ok(Some(ReturnStatement {
-        slice: start.merge(next.slice),
+        slice: start.merge(&next.slice),
         value,
         condition,
     }));
 }
 
-fn parse_match<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<MatchStatement<'a>>, ParserError<'a>> {
+fn parse_match(tokenizer: &mut Tokenizer) -> Result<Option<MatchStatement>, ParserError> {
     let peek = tokenizer.peek(0)?;
     let TokenKind::Keyword(Keyword::Match) = peek.kind else {
         return Ok(None);
@@ -201,7 +195,7 @@ fn parse_match<'a>(
     let peek = tokenizer.peek(0)?;
     if let TokenKind::Symbol(Symbol::BraceClose) = peek.kind {
         return Ok(Some(MatchStatement {
-            slice: start.merge(peek.slice),
+            slice: start.merge(&peek.slice),
             value,
             clauses: vec![],
         }));
@@ -218,7 +212,7 @@ fn parse_match<'a>(
         if let TokenKind::Symbol(Symbol::BraceClose) = next.kind {
             tokenizer.next()?;
             return Ok(Some(MatchStatement {
-                slice: start.merge(next.slice),
+                slice: start.merge(&next.slice),
                 value,
                 clauses,
             }));
@@ -226,9 +220,7 @@ fn parse_match<'a>(
     }
 }
 
-fn parse_match_clause<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<MatchClause<'a>, ParserError<'a>> {
+fn parse_match_clause(tokenizer: &mut Tokenizer) -> Result<MatchClause, ParserError> {
     let pat = parse_pattern(tokenizer)?;
 
     let next = tokenizer.next()?;
@@ -238,13 +230,13 @@ fn parse_match_clause<'a>(
 
     let block = parse_match_block(tokenizer)?;
     return Ok(MatchClause {
-        slice: pat.slice.merge(block.slice),
+        slice: pat.slice.merge(&block.slice),
         pat,
         block,
     });
 }
 
-fn parse_match_block<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<MatchBlock<'a>, ParserError<'a>> {
+fn parse_match_block(tokenizer: &mut Tokenizer) -> Result<MatchBlock, ParserError> {
     let peek = tokenizer.peek(0)?;
     if let TokenKind::Symbol(Symbol::BraceOpen) = peek.kind {
         let Some(block) = parse_block(tokenizer)? else {
@@ -252,7 +244,7 @@ fn parse_match_block<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<MatchBlock<'a>
         };
 
         return Ok(MatchBlock {
-            slice: block.slice,
+            slice: block.slice.clone(),
             kind: MatchBlockKind::Block(block),
         });
     }
@@ -262,14 +254,14 @@ fn parse_match_block<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<MatchBlock<'a>
     };
 
     return Ok(MatchBlock {
-        slice: statement.slice,
+        slice: statement.slice.clone(),
         kind: MatchBlockKind::Statement(Box::new(statement)),
     });
 }
 
-fn parse_let_match_else<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<LetMatchElseStatement<'a>>, ParserError<'a>> {
+fn parse_let_match_else(
+    tokenizer: &mut Tokenizer,
+) -> Result<Option<LetMatchElseStatement>, ParserError> {
     let Some(clause) = parse_let_match_clause(tokenizer)? else {
         return Ok(None);
     };
@@ -285,15 +277,13 @@ fn parse_let_match_else<'a>(
     };
 
     return Ok(Some(LetMatchElseStatement {
-        slice: clause.slice.merge(block.slice),
+        slice: clause.slice.merge(&block.slice),
         clause,
         block,
     }));
 }
 
-fn parse_if_statement<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<IfStatement<'a>>, ParserError<'a>> {
+fn parse_if_statement(tokenizer: &mut Tokenizer) -> Result<Option<IfStatement>, ParserError> {
     let peek = tokenizer.peek(0)?;
     let TokenKind::Keyword(Keyword::If) = peek.kind else {
         return Ok(None);
@@ -310,7 +300,7 @@ fn parse_if_statement<'a>(
 
     let mut last = block.slice.clone();
     let mut conditions = vec![IfCondition {
-        slice: start.merge(block.slice),
+        slice: start.merge(&block.slice),
         condition: Some(condition),
         block,
     }];
@@ -321,14 +311,12 @@ fn parse_if_statement<'a>(
     }
 
     return Ok(Some(IfStatement {
-        slice: start.merge(last),
+        slice: start.merge(&last),
         conditions,
     }));
 }
 
-fn parse_else_block<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<IfCondition<'a>>, ParserError<'a>> {
+fn parse_else_block(tokenizer: &mut Tokenizer) -> Result<Option<IfCondition>, ParserError> {
     let peek = tokenizer.peek(0)?;
     let TokenKind::Keyword(Keyword::Else) = peek.kind else {
         return Ok(None);
@@ -348,9 +336,8 @@ fn parse_else_block<'a>(
             return Err(ParserError::unexpected_token(peek));
         };
 
-        let last = block.slice;
         return Ok(Some(IfCondition {
-            slice: start.merge(last),
+            slice: start.merge(&block.slice),
             condition: Some(condition),
             block,
         }));
@@ -361,20 +348,17 @@ fn parse_else_block<'a>(
         return Err(ParserError::unexpected_token(peek));
     };
 
-    let last = block.slice;
     return Ok(Some(IfCondition {
-        slice: start.merge(last),
+        slice: start.merge(&block.slice),
         condition: None,
         block,
     }));
 }
 
-fn parse_if_condition_kind<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<IfClause<'a>, ParserError<'a>> {
+fn parse_if_condition_kind(tokenizer: &mut Tokenizer) -> Result<IfClause, ParserError> {
     if let Some(clause) = parse_let_match_clause(tokenizer)? {
         return Ok(IfClause {
-            slice: clause.slice,
+            slice: clause.slice.clone(),
             kind: IfClauseKind::LetMatch(clause),
         });
     }
@@ -396,16 +380,16 @@ fn parse_if_condition_kind<'a>(
     };
 
     return Ok(IfClause {
-        slice: start.merge(next.slice),
+        slice: start.merge(&next.slice),
         kind: IfClauseKind::Expr(expr),
     });
 }
 
-fn parse_let_match_clause<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<LetMatchClause<'a>>, ParserError<'a>> {
+fn parse_let_match_clause(
+    tokenizer: &mut Tokenizer,
+) -> Result<Option<LetMatchClause>, ParserError> {
     let peek = [tokenizer.peek(0)?, tokenizer.peek(1)?];
-    let start = peek[0].slice;
+    let start = peek[0].slice.clone();
     let [TokenKind::Keyword(Keyword::Let), TokenKind::Keyword(Keyword::Match)] =
         peek.map(|it| it.kind)
     else {
@@ -438,7 +422,7 @@ fn parse_let_match_clause<'a>(
     let end = next.slice;
 
     return Ok(Some(LetMatchClause {
-        slice: start.merge(end),
+        slice: start.merge(&end),
         pat,
         value,
     }));

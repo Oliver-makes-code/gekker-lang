@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::{fmt::Debug, sync::Arc};
 
 use crate::{
     string::StringSlice,
@@ -13,222 +13,219 @@ use super::{
 };
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct DeclModifier<'a, T>
+pub struct DeclModifier<T>
 where
     T: Debug + Clone + PartialEq,
 {
-    pub slice: StringSlice<'a>,
-    pub attrs: Option<Attrs<'a>>,
-    pub generics: Option<GenericsDecl<'a>>,
+    pub slice: StringSlice,
+    pub attrs: Option<Attrs>,
+    pub generics: Option<GenericsDecl>,
     pub is_pub: bool,
     pub value: T,
 }
 
 /// Allowed in top-level code
 #[derive(Debug, Clone, PartialEq)]
-pub struct DeclLvl1<'a> {
-    pub slice: StringSlice<'a>,
-    pub kind: DeclLvl1Kind<'a>,
+pub struct DeclLvl1 {
+    pub slice: StringSlice,
+    pub kind: DeclLvl1Kind,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum DeclLvl1Kind<'a> {
-    Namespace(NamespaceDecl<'a>),
-    Using(NamespaceDecl<'a>),
-    Lvl2(DeclModifier<'a, DeclLvl2<'a>>),
+pub enum DeclLvl1Kind {
+    Namespace(NamespaceDecl),
+    Using(NamespaceDecl),
+    Lvl2(DeclModifier<DeclLvl2>),
 }
 
 /// Allowed to be public, have properties, and have generics
 #[derive(Debug, Clone, PartialEq)]
-pub struct DeclLvl2<'a> {
-    pub slice: StringSlice<'a>,
-    pub kind: DeclLvl2Kind<'a>,
+pub struct DeclLvl2 {
+    pub slice: StringSlice,
+    pub kind: DeclLvl2Kind,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum DeclLvl2Kind<'a> {
-    Enum(EnumDecl<'a>),
-    Union(UnionDecl<'a>),
-    Struct(StructDecl<'a>),
-    Trait(TraitDecl<'a>),
-    Impl(ImplDecl<'a>),
-    Lvl3(DeclLvl3<'a>),
+pub enum DeclLvl2Kind {
+    Enum(EnumDecl),
+    Union(UnionDecl),
+    Struct(StructDecl),
+    Trait(TraitDecl),
+    Impl(ImplDecl),
+    Lvl3(DeclLvl3),
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct NamespaceDecl<'a> {
-    pub slice: StringSlice<'a>,
-    pub path: IdentPath<'a>,
+pub struct NamespaceDecl {
+    pub slice: StringSlice,
+    pub path: IdentPath,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ImplDecl<'a> {
-    pub slice: StringSlice<'a>,
-    pub tr: Type<'a>,
-    pub ty: Type<'a>,
-    pub body: TraitBody<'a>,
+pub struct ImplDecl {
+    pub slice: StringSlice,
+    pub tr: Type,
+    pub ty: Type,
+    pub body: TraitBody,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct TraitDecl<'a> {
-    pub slice: StringSlice<'a>,
-    pub name: &'a str,
-    pub body: TraitBody<'a>,
+pub struct TraitDecl {
+    pub slice: StringSlice,
+    pub name: Arc<str>,
+    pub body: TraitBody,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct TraitBody<'a> {
-    pub slice: StringSlice<'a>,
-    pub decls: Vec<DeclModifier<'a, DeclLvl3<'a>>>,
+pub struct TraitBody {
+    pub slice: StringSlice,
+    pub decls: Vec<DeclModifier<DeclLvl3>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct UnionDecl<'a> {
-    pub slice: StringSlice<'a>,
-    pub name: &'a str,
-    pub body: StructBody<'a>,
+pub struct UnionDecl {
+    pub slice: StringSlice,
+    pub name: Arc<str>,
+    pub body: StructBody,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct EnumDecl<'a> {
-    pub slice: StringSlice<'a>,
-    pub name: &'a str,
-    pub kind: EnumDeclKind<'a>,
+pub struct EnumDecl {
+    pub slice: StringSlice,
+    pub name: Arc<str>,
+    pub kind: EnumDeclKind,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum EnumDeclKind<'a> {
-    Int {
-        ty: IntEnumType,
-        body: IntEnumBody<'a>,
-    },
-    Value(StructBody<'a>),
+pub enum EnumDeclKind {
+    Int { ty: IntEnumType, body: IntEnumBody },
+    Value(StructBody),
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct StructDecl<'a> {
-    pub slice: StringSlice<'a>,
-    pub name: &'a str,
-    pub kind: StructDeclKind<'a>,
+pub struct StructDecl {
+    pub slice: StringSlice,
+    pub name: Arc<str>,
+    pub kind: StructDeclKind,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum StructDeclKind<'a> {
-    Wrapper(Type<'a>),
-    Value(StructBody<'a>),
+pub enum StructDeclKind {
+    Wrapper(Type),
+    Value(StructBody),
 }
 
 /// Allowed in top-level code and trait impls
 #[derive(Debug, Clone, PartialEq)]
-pub struct DeclLvl3<'a> {
-    pub slice: StringSlice<'a>,
-    pub kind: DeclLvl3Kind<'a>,
+pub struct DeclLvl3 {
+    pub slice: StringSlice,
+    pub kind: DeclLvl3Kind,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum DeclLvl3Kind<'a> {
-    Function(FunctionDecl<'a>),
-    Variable(VariableDecl<'a>),
+pub enum DeclLvl3Kind {
+    Function(FunctionDecl),
+    Variable(VariableDecl),
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct FunctionDecl<'a> {
-    pub slice: StringSlice<'a>,
+pub struct FunctionDecl {
+    pub slice: StringSlice,
     pub modifier: FunctionModifier,
-    pub name: &'a str,
-    pub this_param: Option<ThisParam<'a>>,
-    pub params: Vec<FuncParam<'a>>,
-    pub ret: Option<Type<'a>>,
-    pub body: Option<FuncBody<'a>>,
+    pub name: Arc<str>,
+    pub this_param: Option<ThisParam>,
+    pub params: Vec<FuncParam>,
+    pub ret: Option<Type>,
+    pub body: Option<FuncBody>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct VariableDecl<'a> {
-    pub slice: StringSlice<'a>,
+pub struct VariableDecl {
+    pub slice: StringSlice,
     pub modifier: VariableModifier,
-    pub name: VariableName<'a>,
-    pub ty: Option<Type<'a>>,
-    pub init: Option<Expr<'a>>,
+    pub name: VariableName,
+    pub ty: Option<Type>,
+    pub init: Option<Expr>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct GenericsDecl<'a> {
-    pub slice: StringSlice<'a>,
-    pub tys: Vec<GenericType<'a>>,
+pub struct GenericsDecl {
+    pub slice: StringSlice,
+    pub tys: Vec<GenericType>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct GenericType<'a> {
-    pub slice: StringSlice<'a>,
-    pub name: &'a str,
-    pub clauses: Vec<TypeClause<'a>>,
+pub struct GenericType {
+    pub slice: StringSlice,
+    pub name: Arc<str>,
+    pub clauses: Vec<TypeClause>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct TypeClause<'a> {
-    pub slice: StringSlice<'a>,
+pub struct TypeClause {
+    pub slice: StringSlice,
     pub exclude: bool,
-    pub ty: ClauseKind<'a>,
+    pub ty: ClauseKind,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum ClauseKind<'a> {
-    RealType(Type<'a>),
+pub enum ClauseKind {
+    RealType(Type),
     Default,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Attrs<'a> {
-    pub slice: StringSlice<'a>,
-    pub attrs: Vec<Attr<'a>>,
+pub struct Attrs {
+    pub slice: StringSlice,
+    pub attrs: Vec<Attr>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Attr<'a> {
-    pub slice: StringSlice<'a>,
-    pub name: &'a str,
-    pub params: Vec<Expr<'a>>,
+pub struct Attr {
+    pub slice: StringSlice,
+    pub name: Arc<str>,
+    pub params: Vec<Expr>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct FuncBody<'a> {
-    pub slice: StringSlice<'a>,
-    pub kind: FuncBodyKind<'a>,
+pub struct FuncBody {
+    pub slice: StringSlice,
+    pub kind: FuncBodyKind,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum FuncBodyKind<'a> {
-    Block(Block<'a>),
-    Expr(Expr<'a>),
+pub enum FuncBodyKind {
+    Block(Block),
+    Expr(Expr),
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ThisParam<'a> {
-    pub slice: StringSlice<'a>,
+pub struct ThisParam {
+    pub slice: StringSlice,
     pub is_mut: bool,
     pub ref_kind: Option<RefKind>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct FuncParam<'a> {
-    pub slice: StringSlice<'a>,
+pub struct FuncParam {
+    pub slice: StringSlice,
     pub is_mut: bool,
-    pub name: &'a str,
-    pub ty: Type<'a>,
+    pub name: Arc<str>,
+    pub ty: Type,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct StructBody<'a> {
-    pub slice: StringSlice<'a>,
-    pub params: Vec<StructParam<'a>>,
+pub struct StructBody {
+    pub slice: StringSlice,
+    pub params: Vec<StructParam>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct StructParam<'a> {
-    pub slice: StringSlice<'a>,
+pub struct StructParam {
+    pub slice: StringSlice,
     pub is_pub: bool,
-    pub name: &'a str,
-    pub ty: Type<'a>,
+    pub name: Arc<str>,
+    pub ty: Type,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -244,20 +241,20 @@ pub enum IntEnumType {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct IntEnumBody<'a> {
-    pub slice: StringSlice<'a>,
-    pub params: Vec<IntEnumParam<'a>>,
+pub struct IntEnumBody {
+    pub slice: StringSlice,
+    pub params: Vec<IntEnumParam>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct IntEnumParam<'a> {
-    pub slice: StringSlice<'a>,
-    pub name: &'a str,
-    pub value: Option<Expr<'a>>,
+pub struct IntEnumParam {
+    pub slice: StringSlice,
+    pub name: Arc<str>,
+    pub value: Option<Expr>,
 }
 
 impl IntEnumType {
-    pub fn from<'a>(kind: TokenKind<'a>) -> Option<Self> {
+    pub fn from(kind: TokenKind) -> Option<Self> {
         let val = match kind {
             TokenKind::Keyword(Keyword::U8) => IntEnumType::U8,
             TokenKind::Keyword(Keyword::I8) => IntEnumType::I8,

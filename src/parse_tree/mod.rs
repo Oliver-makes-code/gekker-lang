@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::{fmt::Debug, sync::Arc};
 
 use decl::DeclLvl1;
 use parse::error::ParserError;
@@ -19,19 +19,19 @@ pub mod statement;
 pub mod types;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ParseTree<'a> {
-    pub slice: StringSlice<'a>,
-    pub body: Vec<DeclLvl1<'a>>,
+pub struct ParseTree {
+    pub slice: StringSlice,
+    pub body: Vec<DeclLvl1>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct IdentPath<'a> {
-    pub slice: StringSlice<'a>,
-    pub path: Vec<&'a str>,
+pub struct IdentPath {
+    pub slice: StringSlice,
+    pub path: Vec<Arc<str>>,
 }
 
-impl<'a> IdentPath<'a> {
-    pub fn try_parse(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Self>, ParserError<'a>> {
+impl IdentPath {
+    pub fn try_parse(tokenizer: &mut Tokenizer) -> Result<Option<Self>, ParserError> {
         let peek = tokenizer.peek(0)?;
 
         let TokenKind::Identifier(ident) = peek.kind else {
@@ -45,7 +45,7 @@ impl<'a> IdentPath<'a> {
         let mut idents = vec![ident];
 
         // let mut peek = tokenizer.peek(0)?;
-        let mut end = start;
+        let mut end = start.clone();
 
         loop {
             let peek = tokenizer.peek(0)?;
@@ -63,7 +63,7 @@ impl<'a> IdentPath<'a> {
         }
 
         return Ok(Some(Self {
-            slice: start.merge(end),
+            slice: start.merge(&end),
             path: idents,
         }));
     }

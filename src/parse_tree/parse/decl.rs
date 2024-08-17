@@ -22,26 +22,24 @@ use crate::{
 
 use super::{error::ParserError, expr::parse_expr, statement::parse_block, types::parse_type};
 
-pub fn parse_lvl_1_decl<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<DeclLvl1<'a>>, ParserError<'a>> {
+pub fn parse_lvl_1_decl(tokenizer: &mut Tokenizer) -> Result<Option<DeclLvl1>, ParserError> {
     if let Some(decl) = parse_lvl_2_decl(tokenizer)? {
         return Ok(Some(DeclLvl1 {
-            slice: decl.slice,
+            slice: decl.slice.clone(),
             kind: DeclLvl1Kind::Lvl2(decl),
         }));
     }
 
     if let Some(namespace) = parse_namespace(tokenizer)? {
         return Ok(Some(DeclLvl1 {
-            slice: namespace.slice,
+            slice: namespace.slice.clone(),
             kind: DeclLvl1Kind::Namespace(namespace),
         }));
     }
 
     if let Some(using) = parse_using(tokenizer)? {
         return Ok(Some(DeclLvl1 {
-            slice: using.slice,
+            slice: using.slice.clone(),
             kind: DeclLvl1Kind::Using(using),
         }));
     }
@@ -49,59 +47,57 @@ pub fn parse_lvl_1_decl<'a>(
     Ok(None)
 }
 
-pub fn parse_lvl_2_decl<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<DeclModifier<'a, DeclLvl2<'a>>>, ParserError<'a>> {
-    return parse_modifiers(tokenizer, parse_lvl_2_decl_raw, |it| it.slice);
+pub fn parse_lvl_2_decl(
+    tokenizer: &mut Tokenizer,
+) -> Result<Option<DeclModifier<DeclLvl2>>, ParserError> {
+    return parse_modifiers(tokenizer, parse_lvl_2_decl_raw, |it| it.slice.clone());
 }
 
-pub fn parse_lvl_3_decl<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<DeclModifier<'a, DeclLvl3<'a>>>, ParserError<'a>> {
-    return parse_modifiers(tokenizer, parse_lvl_3_decl_raw, |it| it.slice);
+pub fn parse_lvl_3_decl(
+    tokenizer: &mut Tokenizer,
+) -> Result<Option<DeclModifier<DeclLvl3>>, ParserError> {
+    return parse_modifiers(tokenizer, parse_lvl_3_decl_raw, |it| it.slice.clone());
 }
 
-fn parse_lvl_2_decl_raw<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<DeclLvl2<'a>>, ParserError<'a>> {
+fn parse_lvl_2_decl_raw(tokenizer: &mut Tokenizer) -> Result<Option<DeclLvl2>, ParserError> {
     if let Some(lvl3) = parse_lvl_3_decl_raw(tokenizer)? {
         return Ok(Some(DeclLvl2 {
-            slice: lvl3.slice,
+            slice: lvl3.slice.clone(),
             kind: DeclLvl2Kind::Lvl3(lvl3),
         }));
     }
 
     if let Some(st) = parse_struct_decl(tokenizer)? {
         return Ok(Some(DeclLvl2 {
-            slice: st.slice,
+            slice: st.slice.clone(),
             kind: DeclLvl2Kind::Struct(st),
         }));
     }
 
     if let Some(en) = parse_enum_decl(tokenizer)? {
         return Ok(Some(DeclLvl2 {
-            slice: en.slice,
+            slice: en.slice.clone(),
             kind: DeclLvl2Kind::Enum(en),
         }));
     }
 
     if let Some(un) = parse_union_decl(tokenizer)? {
         return Ok(Some(DeclLvl2 {
-            slice: un.slice,
+            slice: un.slice.clone(),
             kind: DeclLvl2Kind::Union(un),
         }));
     }
 
     if let Some(tr) = parse_trait_decl(tokenizer)? {
         return Ok(Some(DeclLvl2 {
-            slice: tr.slice,
+            slice: tr.slice.clone(),
             kind: DeclLvl2Kind::Trait(tr),
         }));
     }
 
     if let Some(im) = parse_impl_decl(tokenizer)? {
         return Ok(Some(DeclLvl2 {
-            slice: im.slice,
+            slice: im.slice.clone(),
             kind: DeclLvl2Kind::Impl(im),
         }));
     }
@@ -109,19 +105,17 @@ fn parse_lvl_2_decl_raw<'a>(
     return Ok(None);
 }
 
-fn parse_lvl_3_decl_raw<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<DeclLvl3<'a>>, ParserError<'a>> {
+fn parse_lvl_3_decl_raw(tokenizer: &mut Tokenizer) -> Result<Option<DeclLvl3>, ParserError> {
     if let Some(var) = parse_var_decl(tokenizer)? {
         return Ok(Some(DeclLvl3 {
-            slice: var.slice,
+            slice: var.slice.clone(),
             kind: DeclLvl3Kind::Variable(var),
         }));
     }
 
     if let Some(func) = parse_func_decl(tokenizer)? {
         return Ok(Some(DeclLvl3 {
-            slice: func.slice,
+            slice: func.slice.clone(),
             kind: DeclLvl3Kind::Function(func),
         }));
     }
@@ -129,14 +123,14 @@ fn parse_lvl_3_decl_raw<'a>(
     return Ok(None);
 }
 
-fn parse_modifiers<'a, FGet, FSlice, T>(
-    tokenizer: &mut Tokenizer<'a>,
+fn parse_modifiers<FGet, FSlice, T>(
+    tokenizer: &mut Tokenizer,
     get: FGet,
     slice: FSlice,
-) -> Result<Option<DeclModifier<'a, T>>, ParserError<'a>>
+) -> Result<Option<DeclModifier<T>>, ParserError>
 where
-    FGet: FnOnce(&mut Tokenizer<'a>) -> Result<Option<T>, ParserError<'a>>,
-    FSlice: Fn(&T) -> StringSlice<'a>,
+    FGet: FnOnce(&mut Tokenizer) -> Result<Option<T>, ParserError>,
+    FSlice: Fn(&T) -> StringSlice,
     T: Debug + Clone + PartialEq,
 {
     let peek = tokenizer.peek(0)?;
@@ -164,7 +158,7 @@ where
     };
 
     return Ok(Some(DeclModifier {
-        slice: start.merge(slice(&value)),
+        slice: start.merge(&slice(&value)),
         attrs,
         generics,
         is_pub,
@@ -172,9 +166,7 @@ where
     }));
 }
 
-pub fn parse_using<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<NamespaceDecl<'a>>, ParserError<'a>> {
+pub fn parse_using(tokenizer: &mut Tokenizer) -> Result<Option<NamespaceDecl>, ParserError> {
     let peek = tokenizer.peek(0)?;
     let TokenKind::Keyword(Keyword::Using) = peek.kind else {
         return Ok(None);
@@ -193,14 +185,12 @@ pub fn parse_using<'a>(
     };
 
     return Ok(Some(NamespaceDecl {
-        slice: start.merge(next.slice),
+        slice: start.merge(&next.slice),
         path,
     }));
 }
 
-pub fn parse_namespace<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<NamespaceDecl<'a>>, ParserError<'a>> {
+pub fn parse_namespace(tokenizer: &mut Tokenizer) -> Result<Option<NamespaceDecl>, ParserError> {
     let peek = tokenizer.peek(0)?;
     let TokenKind::Keyword(Keyword::Namespace) = peek.kind else {
         return Ok(None);
@@ -219,14 +209,12 @@ pub fn parse_namespace<'a>(
     };
 
     return Ok(Some(NamespaceDecl {
-        slice: start.merge(next.slice),
+        slice: start.merge(&next.slice),
         path,
     }));
 }
 
-pub fn parse_impl_decl<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<ImplDecl<'a>>, ParserError<'a>> {
+pub fn parse_impl_decl(tokenizer: &mut Tokenizer) -> Result<Option<ImplDecl>, ParserError> {
     let peek = tokenizer.peek(0)?;
     let TokenKind::Keyword(Keyword::Impl) = peek.kind else {
         return Ok(None);
@@ -246,16 +234,14 @@ pub fn parse_impl_decl<'a>(
     let body = parse_trait_body(tokenizer)?;
 
     return Ok(Some(ImplDecl {
-        slice: start.merge(body.slice),
+        slice: start.merge(&body.slice),
         tr,
         ty,
         body,
     }));
 }
 
-pub fn parse_trait_decl<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<TraitDecl<'a>>, ParserError<'a>> {
+pub fn parse_trait_decl(tokenizer: &mut Tokenizer) -> Result<Option<TraitDecl>, ParserError> {
     let peek = tokenizer.peek(0)?;
     let TokenKind::Keyword(Keyword::Trait) = peek.kind else {
         return Ok(None);
@@ -271,15 +257,13 @@ pub fn parse_trait_decl<'a>(
     let body = parse_trait_body(tokenizer)?;
 
     return Ok(Some(TraitDecl {
-        slice: start.merge(body.slice),
+        slice: start.merge(&body.slice),
         name,
         body,
     }));
 }
 
-pub fn parse_union_decl<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<UnionDecl<'a>>, ParserError<'a>> {
+pub fn parse_union_decl(tokenizer: &mut Tokenizer) -> Result<Option<UnionDecl>, ParserError> {
     let peek = tokenizer.peek(0)?;
     let TokenKind::Keyword(Keyword::Enum) = peek.kind else {
         return Ok(None);
@@ -295,15 +279,13 @@ pub fn parse_union_decl<'a>(
     let body = parse_struct_body(tokenizer)?;
 
     return Ok(Some(UnionDecl {
-        slice: start.merge(body.slice),
+        slice: start.merge(&body.slice),
         name,
         body,
     }));
 }
 
-pub fn parse_enum_decl<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<EnumDecl<'a>>, ParserError<'a>> {
+pub fn parse_enum_decl(tokenizer: &mut Tokenizer) -> Result<Option<EnumDecl>, ParserError> {
     let peek = tokenizer.peek(0)?;
     let TokenKind::Keyword(Keyword::Enum) = peek.kind else {
         return Ok(None);
@@ -328,7 +310,7 @@ pub fn parse_enum_decl<'a>(
         let body = parse_int_enum_body(tokenizer)?;
 
         return Ok(Some(EnumDecl {
-            slice: start.merge(body.slice),
+            slice: start.merge(&body.slice),
             name,
             kind: EnumDeclKind::Int { ty, body },
         }));
@@ -337,15 +319,13 @@ pub fn parse_enum_decl<'a>(
     let body = parse_struct_body(tokenizer)?;
 
     return Ok(Some(EnumDecl {
-        slice: start.merge(body.slice),
+        slice: start.merge(&body.slice),
         name,
         kind: EnumDeclKind::Value(body),
     }));
 }
 
-pub fn parse_struct_decl<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<StructDecl<'a>>, ParserError<'a>> {
+pub fn parse_struct_decl(tokenizer: &mut Tokenizer) -> Result<Option<StructDecl>, ParserError> {
     let peek = tokenizer.peek(0)?;
     let TokenKind::Keyword(Keyword::Struct) = peek.kind else {
         return Ok(None);
@@ -364,7 +344,7 @@ pub fn parse_struct_decl<'a>(
             return Err(ParserError::unexpected_token(next));
         };
         return Ok(Some(StructDecl {
-            slice: start.merge(next.slice),
+            slice: start.merge(&next.slice),
             name,
             kind: StructDeclKind::Wrapper(ty),
         }));
@@ -373,15 +353,13 @@ pub fn parse_struct_decl<'a>(
     let body = parse_struct_body(tokenizer)?;
 
     return Ok(Some(StructDecl {
-        slice: start.merge(body.slice),
+        slice: start.merge(&body.slice),
         name,
         kind: StructDeclKind::Value(body),
     }));
 }
 
-pub fn parse_func_decl<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<FunctionDecl<'a>>, ParserError<'a>> {
+pub fn parse_func_decl(tokenizer: &mut Tokenizer) -> Result<Option<FunctionDecl>, ParserError> {
     let peek = tokenizer.peek(0)?;
 
     let modifier = match peek.kind {
@@ -408,7 +386,7 @@ pub fn parse_func_decl<'a>(
 
     let next = tokenizer.next()?;
     let TokenKind::Symbol(Symbol::ParenOpen) = next.kind else {
-        return Err(ParserError::unexpected_token(peek));
+        return Err(ParserError::unexpected_token(next));
     };
 
     let this_param = parse_this_param(tokenizer)?;
@@ -454,7 +432,7 @@ pub fn parse_func_decl<'a>(
             let ty = parse_type(tokenizer)?;
 
             params.push(FuncParam {
-                slice: start.merge(ty.slice),
+                slice: start.merge(&ty.slice),
                 is_mut,
                 name,
                 ty,
@@ -482,7 +460,7 @@ pub fn parse_func_decl<'a>(
     let (body, end) = match peek.kind {
         TokenKind::Symbol(Symbol::WideArrow | Symbol::BraceOpen) => {
             let body = parse_func_body(tokenizer, Some(Symbol::Semicolon))?;
-            let slice = body.slice;
+            let slice = body.slice.clone();
             (Some(body), slice)
         }
         TokenKind::Symbol(Symbol::Semicolon) => {
@@ -493,7 +471,7 @@ pub fn parse_func_decl<'a>(
     };
 
     return Ok(Some(FunctionDecl {
-        slice: start.merge(end),
+        slice: start.merge(&end),
         modifier,
         name,
         this_param,
@@ -503,9 +481,7 @@ pub fn parse_func_decl<'a>(
     }));
 }
 
-pub fn parse_var_decl<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<VariableDecl<'a>>, ParserError<'a>> {
+pub fn parse_var_decl(tokenizer: &mut Tokenizer) -> Result<Option<VariableDecl>, ParserError> {
     let peek = tokenizer.peek(0)?;
 
     let modifier = match peek.kind {
@@ -555,7 +531,7 @@ pub fn parse_var_decl<'a>(
             };
 
             return Ok(Some(VariableDecl {
-                slice: start.merge(next.slice),
+                slice: start.merge(&next.slice),
                 modifier,
                 name,
                 ty,
@@ -564,7 +540,7 @@ pub fn parse_var_decl<'a>(
         }
         TokenKind::Symbol(Symbol::Semicolon) => {
             return Ok(Some(VariableDecl {
-                slice: start.merge(next.slice),
+                slice: start.merge(&next.slice),
                 modifier,
                 name,
                 ty,
@@ -575,7 +551,7 @@ pub fn parse_var_decl<'a>(
     };
 }
 
-fn parse_attrs<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Attrs<'a>>, ParserError<'a>> {
+fn parse_attrs(tokenizer: &mut Tokenizer) -> Result<Option<Attrs>, ParserError> {
     let peek = tokenizer.peek(0)?;
     let TokenKind::Symbol(Symbol::Pound) = peek.kind else {
         return Ok(None);
@@ -596,7 +572,7 @@ fn parse_attrs<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Attrs<'a>>, P
         attrs.push(attr);
 
         let next = tokenizer.next()?;
-        last = next.slice;
+        last = next.slice.clone();
         match next.kind {
             TokenKind::Symbol(Symbol::Comma) => (),
             TokenKind::Symbol(Symbol::BracketClose) => break,
@@ -605,14 +581,14 @@ fn parse_attrs<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Option<Attrs<'a>>, P
     }
 
     return Ok(Some(Attrs {
-        slice: start.merge(last),
+        slice: start.merge(&last),
         attrs,
     }));
 }
 
-fn parse_attr<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Attr<'a>, ParserError<'a>> {
+fn parse_attr(tokenizer: &mut Tokenizer) -> Result<Attr, ParserError> {
     let next = tokenizer.next()?;
-    let start = next.slice;
+    let start = next.slice.clone();
 
     let TokenKind::Identifier(name) = next.kind else {
         return Err(ParserError::unexpected_token(next));
@@ -641,7 +617,7 @@ fn parse_attr<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Attr<'a>, ParserError
         params.push(expr);
 
         let next = tokenizer.next()?;
-        last = next.slice;
+        last = next.slice.clone();
 
         match next.kind {
             TokenKind::Symbol(Symbol::Comma) => (),
@@ -651,15 +627,13 @@ fn parse_attr<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Attr<'a>, ParserError
     }
 
     return Ok(Attr {
-        slice: start.merge(last),
+        slice: start.merge(&last),
         name,
         params,
     });
 }
 
-fn parse_generics_decl<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<GenericsDecl<'a>>, ParserError<'a>> {
+fn parse_generics_decl(tokenizer: &mut Tokenizer) -> Result<Option<GenericsDecl>, ParserError> {
     let peek = tokenizer.peek(0)?;
     let TokenKind::Keyword(Keyword::Where) = peek.kind else {
         return Ok(None);
@@ -668,7 +642,7 @@ fn parse_generics_decl<'a>(
     let start = peek.slice;
 
     let mut tys = vec![];
-    let mut last = start;
+    let mut last = start.clone();
 
     while let Some(ty) = parse_generic_type(tokenizer)? {
         last = ty.slice.clone();
@@ -676,14 +650,12 @@ fn parse_generics_decl<'a>(
     }
 
     return Ok(Some(GenericsDecl {
-        slice: start.merge(last),
+        slice: start.merge(&last),
         tys,
     }));
 }
 
-fn parse_generic_type<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<GenericType<'a>>, ParserError<'a>> {
+fn parse_generic_type(tokenizer: &mut Tokenizer) -> Result<Option<GenericType>, ParserError> {
     let peek = tokenizer.peek(0)?;
 
     let TokenKind::Identifier(name) = peek.kind else {
@@ -698,7 +670,7 @@ fn parse_generic_type<'a>(
         TokenKind::Symbol(Symbol::Colon) => (),
         TokenKind::Symbol(Symbol::Semicolon) => {
             return Ok(Some(GenericType {
-                slice: start.merge(next.slice),
+                slice: start.merge(&next.slice),
                 name,
                 clauses: vec![],
             }))
@@ -718,7 +690,7 @@ fn parse_generic_type<'a>(
             TokenKind::Symbol(Symbol::Comma) => (),
             TokenKind::Symbol(Symbol::Semicolon) => {
                 return Ok(Some(GenericType {
-                    slice: start.merge(next.slice),
+                    slice: start.merge(&next.slice),
                     name,
                     clauses,
                 }))
@@ -728,7 +700,7 @@ fn parse_generic_type<'a>(
     }
 }
 
-fn parse_type_clause<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<TypeClause<'a>, ParserError<'a>> {
+fn parse_type_clause(tokenizer: &mut Tokenizer) -> Result<TypeClause, ParserError> {
     let peek = tokenizer.peek(0)?;
     let start = peek.slice;
 
@@ -745,7 +717,7 @@ fn parse_type_clause<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<TypeClause<'a>
         TokenKind::Keyword(Keyword::Default) => {
             tokenizer.next()?;
             return Ok(TypeClause {
-                slice: start.merge(peek.slice),
+                slice: start.merge(&peek.slice),
                 exclude,
                 ty: ClauseKind::Default,
             });
@@ -753,7 +725,7 @@ fn parse_type_clause<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<TypeClause<'a>
         _ => {
             let ty = parse_type(tokenizer)?;
             return Ok(TypeClause {
-                slice: start.merge(ty.slice),
+                slice: start.merge(&ty.slice),
                 exclude,
                 ty: ClauseKind::RealType(ty),
             });
@@ -761,9 +733,7 @@ fn parse_type_clause<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<TypeClause<'a>
     };
 }
 
-pub fn parse_trait_body<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<TraitBody<'a>, ParserError<'a>> {
+pub fn parse_trait_body(tokenizer: &mut Tokenizer) -> Result<TraitBody, ParserError> {
     let next = tokenizer.peek(0)?;
     let TokenKind::Symbol(Symbol::BraceOpen) = next.kind else {
         return Err(ParserError::unexpected_token(next));
@@ -780,7 +750,7 @@ pub fn parse_trait_body<'a>(
         let last = tokenizer.next()?.slice;
 
         return Ok(TraitBody {
-            slice: start.merge(last),
+            slice: start.merge(&last),
             decls,
         });
     }
@@ -799,16 +769,14 @@ pub fn parse_trait_body<'a>(
             let last = tokenizer.next()?.slice;
 
             return Ok(TraitBody {
-                slice: start.merge(last),
+                slice: start.merge(&last),
                 decls,
             });
         }
     }
 }
 
-pub fn parse_int_enum_body<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<IntEnumBody<'a>, ParserError<'a>> {
+pub fn parse_int_enum_body(tokenizer: &mut Tokenizer) -> Result<IntEnumBody, ParserError> {
     let next = tokenizer.peek(0)?;
     let TokenKind::Symbol(Symbol::BraceOpen) = next.kind else {
         return Err(ParserError::unexpected_token(next));
@@ -824,7 +792,7 @@ pub fn parse_int_enum_body<'a>(
         let last = tokenizer.next()?.slice;
 
         return Ok(IntEnumBody {
-            slice: start.merge(last),
+            slice: start.merge(&last),
             params,
         });
     }
@@ -849,7 +817,7 @@ pub fn parse_int_enum_body<'a>(
             };
 
             params.push(IntEnumParam {
-                slice: start.merge(expr.slice),
+                slice: start.merge(&expr.slice),
                 name,
                 value: Some(expr),
             });
@@ -877,14 +845,12 @@ pub fn parse_int_enum_body<'a>(
     let next = tokenizer.next()?;
 
     return Ok(IntEnumBody {
-        slice: start.merge(next.slice),
+        slice: start.merge(&next.slice),
         params,
     });
 }
 
-pub fn parse_struct_body<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<StructBody<'a>, ParserError<'a>> {
+pub fn parse_struct_body(tokenizer: &mut Tokenizer) -> Result<StructBody, ParserError> {
     let next = tokenizer.peek(0)?;
     let TokenKind::Symbol(Symbol::BraceOpen) = next.kind else {
         return Err(ParserError::unexpected_token(next));
@@ -900,7 +866,7 @@ pub fn parse_struct_body<'a>(
         let last = tokenizer.next()?.slice;
 
         return Ok(StructBody {
-            slice: start.merge(last),
+            slice: start.merge(&last),
             params,
         });
     }
@@ -908,7 +874,6 @@ pub fn parse_struct_body<'a>(
     loop {
         tokenizer.next()?;
         let peek = tokenizer.peek(0)?;
-        let start = next.slice;
 
         let is_pub = if let TokenKind::Keyword(Keyword::Pub) = peek.kind {
             tokenizer.next()?;
@@ -930,7 +895,7 @@ pub fn parse_struct_body<'a>(
         let ty = parse_type(tokenizer)?;
 
         params.push(StructParam {
-            slice: start.merge(ty.slice),
+            slice: start.merge(&ty.slice),
             is_pub,
             name,
             ty,
@@ -952,17 +917,17 @@ pub fn parse_struct_body<'a>(
     let last = tokenizer.next()?.slice;
 
     return Ok(StructBody {
-        slice: start.merge(last),
+        slice: start.merge(&last),
         params,
     });
 }
 
-pub fn parse_func_body<'a>(
-    tokenizer: &mut Tokenizer<'a>,
+pub fn parse_func_body(
+    tokenizer: &mut Tokenizer,
     end_symbol: Option<Symbol>,
-) -> Result<FuncBody<'a>, ParserError<'a>> {
+) -> Result<FuncBody, ParserError> {
     let peek = tokenizer.peek(0)?;
-    let start = peek.slice;
+    let start = peek.slice.clone();
     match peek.kind {
         TokenKind::Symbol(Symbol::WideArrow) => {
             tokenizer.next()?;
@@ -978,13 +943,13 @@ pub fn parse_func_body<'a>(
                 };
 
                 return Ok(FuncBody {
-                    slice: start.merge(next.slice),
+                    slice: start.merge(&next.slice),
                     kind: FuncBodyKind::Expr(expr),
                 });
             }
 
             return Ok(FuncBody {
-                slice: start.merge(expr.slice),
+                slice: start.merge(&expr.slice),
                 kind: FuncBodyKind::Expr(expr),
             });
         }
@@ -995,7 +960,7 @@ pub fn parse_func_body<'a>(
             };
 
             return Ok(FuncBody {
-                slice: start.merge(block.slice),
+                slice: start.merge(&block.slice),
                 kind: FuncBodyKind::Block(block),
             });
         }
@@ -1003,9 +968,7 @@ pub fn parse_func_body<'a>(
     };
 }
 
-fn parse_this_param<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<ThisParam<'a>>, ParserError<'a>> {
+fn parse_this_param(tokenizer: &mut Tokenizer) -> Result<Option<ThisParam>, ParserError> {
     let peek = tokenizer.peek(0)?;
 
     let start = peek.slice;
@@ -1029,15 +992,13 @@ fn parse_this_param<'a>(
     tokenizer.next()?;
 
     return Ok(Some(ThisParam {
-        slice: start.merge(next.slice),
+        slice: start.merge(&next.slice),
         is_mut,
         ref_kind,
     }));
 }
 
-fn parse_type_annotation<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<Option<Type<'a>>, ParserError<'a>> {
+fn parse_type_annotation(tokenizer: &mut Tokenizer) -> Result<Option<Type>, ParserError> {
     let peek = tokenizer.peek(0)?;
     let TokenKind::Symbol(Symbol::Colon) = peek.kind else {
         return Ok(None);

@@ -1,28 +1,30 @@
+use std::sync::Arc;
+
 use crate::{string::StringSlice, tokenizer::token::Number};
 
 use super::{expr::GenericsInstance, IdentPath};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Pattern<'a> {
-    pub slice: StringSlice<'a>,
-    pub kind: PatternKind<'a>,
+pub struct Pattern {
+    pub slice: StringSlice,
+    pub kind: PatternKind,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum PatternKind<'a> {
+pub enum PatternKind {
     Value {
         is_mut: bool,
-        name: &'a str,
+        name: Arc<str>,
     },
     Initializer {
-        name: IdentPath<'a>,
-        generics: Option<GenericsInstance<'a>>,
-        list: InitializerPattern<'a>,
+        name: IdentPath,
+        generics: Option<GenericsInstance>,
+        list: InitializerPattern,
     },
-    Or(Vec<Pattern<'a>>),
+    Or(Vec<Pattern>),
     Number(Number),
     Bool(bool),
-    String(String),
+    String(Arc<str>),
     Char(char),
     Invalid,
     Nullptr,
@@ -31,21 +33,21 @@ pub enum PatternKind<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct InitializerPattern<'a> {
-    pub slice: StringSlice<'a>,
-    pub kind: InitializerPatternKind<'a>,
+pub struct InitializerPattern {
+    pub slice: StringSlice,
+    pub kind: InitializerPatternKind,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum InitializerPatternKind<'a> {
-    Expr(Vec<Pattern<'a>>),
-    Named(Vec<NamedInitializerPattern<'a>>),
+pub enum InitializerPatternKind {
+    Expr(Vec<Pattern>),
+    Named(Vec<NamedInitializerPattern>),
     Empty,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct NamedInitializerPattern<'a> {
-    pub slice: StringSlice<'a>,
-    pub name: &'a str,
-    pub value: Pattern<'a>,
+pub struct NamedInitializerPattern {
+    pub slice: StringSlice,
+    pub name: Arc<str>,
+    pub value: Pattern,
 }

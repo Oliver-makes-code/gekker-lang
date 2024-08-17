@@ -12,16 +12,17 @@ pub mod pattern;
 pub mod statement;
 pub mod types;
 
-pub fn parse_root<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<ParseTree<'a>, ParserError<'a>> {
+pub fn parse_root(tokenizer: &mut Tokenizer) -> Result<ParseTree, ParserError> {
     let mut body = vec![];
 
     let peek = tokenizer.peek(0)?;
-    if let TokenKind::Eof = tokenizer.peek(0)?.kind {
+    if let TokenKind::Eof = peek.kind {
         return Ok(ParseTree {
             slice: peek.slice,
             body,
         });
     }
+    let start = peek.slice;
 
     loop {
         let peek = tokenizer.peek(0)?;
@@ -33,7 +34,7 @@ pub fn parse_root<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<ParseTree<'a>, Pa
         let peek = tokenizer.peek(0)?;
         if let TokenKind::Eof = tokenizer.peek(0)?.kind {
             return Ok(ParseTree {
-                slice: peek.slice,
+                slice: start.merge(&peek.slice),
                 body,
             });
         }

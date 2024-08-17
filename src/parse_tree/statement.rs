@@ -1,104 +1,106 @@
+use std::sync::Arc;
+
 use crate::string::StringSlice;
 
 use super::{decl::VariableDecl, expr::Expr, pattern::Pattern};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Statement<'a> {
-    pub slice: StringSlice<'a>,
-    pub kind: StatementKind<'a>,
+pub struct Statement {
+    pub slice: StringSlice,
+    pub kind: StatementKind,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Block<'a> {
-    pub slice: StringSlice<'a>,
-    pub statements: Vec<Statement<'a>>,
+pub struct Block {
+    pub slice: StringSlice,
+    pub statements: Vec<Statement>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum StatementKind<'a> {
-    Decl(VariableDecl<'a>),
-    Expr(Expr<'a>),
-    If(IfStatement<'a>),
-    LetMatchElse(LetMatchElseStatement<'a>),
-    Match(MatchStatement<'a>),
-    Return(ReturnStatement<'a>),
+pub enum StatementKind {
+    Decl(VariableDecl),
+    Expr(Expr),
+    If(IfStatement),
+    LetMatchElse(LetMatchElseStatement),
+    Match(MatchStatement),
+    Return(ReturnStatement),
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ReturnStatement<'a> {
-    pub slice: StringSlice<'a>,
-    pub value: Option<Expr<'a>>,
-    pub condition: Option<Expr<'a>>,
+pub struct ReturnStatement {
+    pub slice: StringSlice,
+    pub value: Option<Expr>,
+    pub condition: Option<Expr>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct LetMatchElseStatement<'a> {
-    pub slice: StringSlice<'a>,
-    pub clause: LetMatchClause<'a>,
-    pub block: Block<'a>,
+pub struct LetMatchElseStatement {
+    pub slice: StringSlice,
+    pub clause: LetMatchClause,
+    pub block: Block,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct IfStatement<'a> {
-    pub slice: StringSlice<'a>,
-    pub conditions: Vec<IfCondition<'a>>,
+pub struct IfStatement {
+    pub slice: StringSlice,
+    pub conditions: Vec<IfCondition>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct IfCondition<'a> {
-    pub slice: StringSlice<'a>,
-    pub condition: Option<IfClause<'a>>,
-    pub block: Block<'a>,
+pub struct IfCondition {
+    pub slice: StringSlice,
+    pub condition: Option<IfClause>,
+    pub block: Block,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct IfClause<'a> {
-    pub slice: StringSlice<'a>,
-    pub kind: IfClauseKind<'a>,
+pub struct IfClause {
+    pub slice: StringSlice,
+    pub kind: IfClauseKind,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum IfClauseKind<'a> {
-    Expr(Expr<'a>),
-    LetMatch(LetMatchClause<'a>),
+pub enum IfClauseKind {
+    Expr(Expr),
+    LetMatch(LetMatchClause),
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct LetMatchClause<'a> {
-    pub slice: StringSlice<'a>,
-    pub pat: Pattern<'a>,
-    pub value: Expr<'a>,
+pub struct LetMatchClause {
+    pub slice: StringSlice,
+    pub pat: Pattern,
+    pub value: Expr,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct MatchStatement<'a> {
-    pub slice: StringSlice<'a>,
-    pub value: Expr<'a>,
-    pub clauses: Vec<MatchClause<'a>>,
+pub struct MatchStatement {
+    pub slice: StringSlice,
+    pub value: Expr,
+    pub clauses: Vec<MatchClause>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct MatchClause<'a> {
-    pub slice: StringSlice<'a>,
-    pub pat: Pattern<'a>,
-    pub block: MatchBlock<'a>,
+pub struct MatchClause {
+    pub slice: StringSlice,
+    pub pat: Pattern,
+    pub block: MatchBlock,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct MatchBlock<'a> {
-    pub slice: StringSlice<'a>,
-    pub kind: MatchBlockKind<'a>,
+pub struct MatchBlock {
+    pub slice: StringSlice,
+    pub kind: MatchBlockKind,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum MatchBlockKind<'a> {
-    Statement(Box<Statement<'a>>),
-    Block(Block<'a>),
+pub enum MatchBlockKind {
+    Statement(Box<Statement>),
+    Block(Block),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum VariableName<'a> {
-    Identifier(&'a str),
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum VariableName {
+    Identifier(Arc<str>),
     Discard,
 }
 

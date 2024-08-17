@@ -5,3 +5,9 @@ using X::Y;
 func Main(args: ref [ref str]): i32 {
     return 0;
 }
+
+#[ehehe(yippee)]
+where T;
+pub trait Mwehehe {
+    func DoSomething(this): This;
+}

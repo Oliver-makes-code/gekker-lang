@@ -1,17 +1,17 @@
 use crate::tokenizer::{token::Token, TokenizeError};
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum ParserError<'a> {
-    TokenizeError(TokenizeError<'a>),
+pub enum ParserError {
+    TokenizeError(TokenizeError),
     UnexpectedToken {
-        token: Token<'a>,
+        token: Token,
         throwing_location: String,
     },
 }
 
-impl<'a> ParserError<'a> {
+impl ParserError {
     #[track_caller]
-    pub fn unexpected_token(token: Token<'a>) -> Self {
+    pub fn unexpected_token(token: Token) -> Self {
         return Self::UnexpectedToken {
             token,
             throwing_location: format!("{}", std::panic::Location::caller()),
@@ -19,8 +19,8 @@ impl<'a> ParserError<'a> {
     }
 }
 
-impl<'a> From<TokenizeError<'a>> for ParserError<'a> {
-    fn from(value: TokenizeError<'a>) -> Self {
+impl From<TokenizeError> for ParserError {
+    fn from(value: TokenizeError) -> Self {
         Self::TokenizeError(value)
     }
 }

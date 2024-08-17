@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::{collections::VecDeque, sync::Arc};
 
 use token::{Keyword, Number, Symbol, Token, TokenKind};
 
@@ -15,36 +15,36 @@ fn valid_ident_cont(c: char) -> bool {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum TokenizeError<'a> {
-    InvalidString(StringSlice<'a>),
-    InvalidChar(StringSlice<'a>),
-    UnclosedChar(StringSlice<'a>),
-    InvalidEscape(StringSlice<'a>),
-    UnclosedStr(StringSlice<'a>),
+pub enum TokenizeError {
+    InvalidString(StringSlice),
+    InvalidChar(StringSlice),
+    UnclosedChar(StringSlice),
+    InvalidEscape(StringSlice),
+    UnclosedStr(StringSlice),
     UnexpectedEof,
 }
 
-pub struct Tokenizer<'a> {
-    parser: StringParser<'a>,
-    peek: VecDeque<Token<'a>>,
+pub struct Tokenizer {
+    parser: StringParser,
+    peek: VecDeque<Token>,
 }
 
-impl<'a> Tokenizer<'a> {
-    pub fn new(src: &'a str) -> Self {
+impl Tokenizer {
+    pub fn new(src: Arc<str>) -> Self {
         return Self {
             parser: StringParser::new(src),
             peek: VecDeque::new(),
         };
     }
 
-    fn try_parse_ident(&mut self) -> Option<StringSlice<'a>> {
+    fn try_parse_ident(&mut self) -> Option<StringSlice> {
         if self.parser.is_func(valid_ident_start) {
             return self.parser.while_func(valid_ident_cont);
         }
         return None;
     }
 
-    fn try_parse_number(&mut self) -> Option<(StringSlice<'a>, Number)> {
+    fn try_parse_number(&mut self) -> Option<(StringSlice, Number)> {
         self.parser.checkout();
 
         if let Some(whole_slice) = self.parser.while_func(char::is_numeric) {
@@ -75,7 +75,7 @@ impl<'a> Tokenizer<'a> {
         return None;
     }
 
-    fn try_parse_char(&mut self) -> Result<Option<(StringSlice<'a>, char)>, TokenizeError<'a>> {
+    fn try_parse_char(&mut self) -> Result<Option<(StringSlice, char)>, TokenizeError> {
         if !self.parser.is_char('\'') {
             return Ok(None);
         }
@@ -175,7 +175,7 @@ impl<'a> Tokenizer<'a> {
         }
     }
 
-    fn try_parse_string(&mut self) -> Result<Option<(StringSlice<'a>, String)>, TokenizeError<'a>> {
+    fn try_parse_string(&mut self) -> Result<Option<(StringSlice, String)>, TokenizeError> {
         if !self.parser.is_char('"') {
             return Ok(None);
         }
@@ -273,7 +273,7 @@ impl<'a> Tokenizer<'a> {
         return Err(TokenizeError::UnexpectedEof);
     }
 
-    fn skip_ignores(&mut self) -> Result<(), TokenizeError<'a>> {
+    fn skip_ignores(&mut self) -> Result<(), TokenizeError> {
         loop {
             let mut exit = true;
             if self.parser.while_func(char::is_whitespace).is_some() {
@@ -302,7 +302,7 @@ impl<'a> Tokenizer<'a> {
         return Ok(());
     }
 
-    pub fn peek(&mut self, n: usize) -> Result<Token<'a>, TokenizeError<'a>> {
+    pub fn peek(&mut self, n: usize) -> Result<Token, TokenizeError> {
         if let Some(token) = self.peek.get(n) {
             return Ok(token.clone());
         }
@@ -315,7 +315,7 @@ impl<'a> Tokenizer<'a> {
         return Ok(self.peek.get(n).unwrap().clone());
     }
 
-    pub fn next(&mut self) -> Result<Token<'a>, TokenizeError<'a>> {
+    pub fn next(&mut self) -> Result<Token, TokenizeError> {
         if let Some(peek) = self.peek.pop_front() {
             return Ok(peek);
         }
@@ -323,7 +323,7 @@ impl<'a> Tokenizer<'a> {
         return self.next_raw();
     }
 
-    fn next_raw(&mut self) -> Result<Token<'a>, TokenizeError<'a>> {
+    fn next_raw(&mut self) -> Result<Token, TokenizeError> {
         self.skip_ignores()?;
 
         if let None = self.parser.curr() {
@@ -337,7 +337,7 @@ impl<'a> Tokenizer<'a> {
         if let Some(slice) = self.try_parse_ident() {
             let value = slice.value();
 
-            if let Some(keyword) = Keyword::from(value) {
+            if let Some(keyword) = Keyword::from(&value) {
                 return Ok(Token {
                     slice,
                     kind: TokenKind::Keyword(keyword),
@@ -374,7 +374,7 @@ impl<'a> Tokenizer<'a> {
         if let Some((slice, str)) = self.try_parse_string()? {
             return Ok(Token {
                 slice,
-                kind: TokenKind::String(str),
+                kind: TokenKind::String(str.into()),
             });
         }
 

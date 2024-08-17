@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     string::StringSlice,
     tokenizer::token::{Keyword, Number, Symbol, TokenKind},
@@ -6,61 +8,61 @@ use crate::{
 use super::{decl::FuncBody, types::Type, IdentPath};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Expr<'a> {
-    pub slice: StringSlice<'a>,
-    pub kind: ExprKind<'a>,
+pub struct Expr {
+    pub slice: StringSlice,
+    pub kind: ExprKind,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum ExprKind<'a> {
+pub enum ExprKind {
     Invoke {
-        value: Box<Expr<'a>>,
-        params: Vec<Expr<'a>>,
+        value: Box<Expr>,
+        params: Vec<Expr>,
     },
     Index {
-        value: Box<Expr<'a>>,
-        index: Box<Expr<'a>>,
+        value: Box<Expr>,
+        index: Box<Expr>,
     },
     Field {
-        value: Box<Expr<'a>>,
+        value: Box<Expr>,
         access: AccessKind,
-        field: &'a str,
-        generics: Option<GenericsInstance<'a>>,
+        field: Arc<str>,
+        generics: Option<GenericsInstance>,
     },
     BinOp {
-        lhs: Box<Expr<'a>>,
+        lhs: Box<Expr>,
         op: BinOp,
-        rhs: Box<Expr<'a>>,
+        rhs: Box<Expr>,
     },
     Cast {
-        value: Box<Expr<'a>>,
-        ty: Type<'a>,
+        value: Box<Expr>,
+        ty: Type,
     },
     UnaryOp {
         op: UnaryOp,
-        value: Box<Expr<'a>>,
+        value: Box<Expr>,
     },
     Variable {
-        path: IdentPath<'a>,
-        generics: Option<GenericsInstance<'a>>,
+        path: IdentPath,
+        generics: Option<GenericsInstance>,
     },
     Initializer {
-        path: IdentPath<'a>,
-        generics: Option<GenericsInstance<'a>>,
-        list: InitializerList<'a>,
+        path: IdentPath,
+        generics: Option<GenericsInstance>,
+        list: InitializerList,
     },
     AnonStructInitializer {
-        list: InitializerList<'a>,
+        list: InitializerList,
     },
     Lambda {
-        params: Option<LambdaParams<'a>>,
-        captures: Option<LambdaCaptures<'a>>,
-        body: Box<FuncBody<'a>>,
+        params: Option<LambdaParams>,
+        captures: Option<LambdaCaptures>,
+        body: Box<FuncBody>,
     },
-    SizeofType(Type<'a>),
-    SizeofValue(Box<Expr<'a>>),
+    SizeofType(Type),
+    SizeofValue(Box<Expr>),
     Number(Number),
-    String(String),
+    String(Arc<str>),
     Char(char),
     Bool(bool),
     This,
@@ -71,64 +73,64 @@ pub enum ExprKind<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct LambdaParams<'a> {
-    pub slice: StringSlice<'a>,
-    pub params: Vec<LambdaParam<'a>>,
+pub struct LambdaParams {
+    pub slice: StringSlice,
+    pub params: Vec<LambdaParam>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct LambdaParam<'a> {
-    pub slice: StringSlice<'a>,
+pub struct LambdaParam {
+    pub slice: StringSlice,
     pub is_mut: bool,
-    pub name: &'a str,
+    pub name: Arc<str>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct LambdaCaptures<'a> {
-    pub slice: StringSlice<'a>,
-    pub captures: Vec<LambdaCapture<'a>>,
+pub struct LambdaCaptures {
+    pub slice: StringSlice,
+    pub captures: Vec<LambdaCapture>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct LambdaCapture<'a> {
-    pub slice: StringSlice<'a>,
+pub struct LambdaCapture {
+    pub slice: StringSlice,
     pub is_ref: bool,
-    pub name: &'a str,
+    pub name: Arc<str>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct InitializerList<'a> {
-    pub slice: StringSlice<'a>,
-    pub kind: InitializerKind<'a>,
+pub struct InitializerList {
+    pub slice: StringSlice,
+    pub kind: InitializerKind,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum InitializerKind<'a> {
-    Expr(Vec<Expr<'a>>),
+pub enum InitializerKind {
+    Expr(Vec<Expr>),
     Named {
-        values: Vec<NamedInitializer<'a>>,
-        default: Option<DefaultedInitializer<'a>>,
+        values: Vec<NamedInitializer>,
+        default: Option<DefaultedInitializer>,
     },
     Empty,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct DefaultedInitializer<'a> {
-    pub slice: StringSlice<'a>,
-    pub value: Box<Expr<'a>>,
+pub struct DefaultedInitializer {
+    pub slice: StringSlice,
+    pub value: Box<Expr>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct NamedInitializer<'a> {
-    pub slice: StringSlice<'a>,
-    pub name: &'a str,
-    pub value: Expr<'a>,
+pub struct NamedInitializer {
+    pub slice: StringSlice,
+    pub name: Arc<str>,
+    pub value: Expr,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct GenericsInstance<'a> {
-    pub slice: StringSlice<'a>,
-    pub params: Vec<Type<'a>>,
+pub struct GenericsInstance {
+    pub slice: StringSlice,
+    pub params: Vec<Type>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -211,7 +213,7 @@ impl AccessKind {
 }
 
 impl UnaryOp {
-    pub fn try_parse_prefix<'a>(kind: TokenKind) -> Option<Self> {
+    pub fn try_parse_prefix(kind: TokenKind) -> Option<Self> {
         let op = match kind {
             TokenKind::Symbol(Symbol::Add) => Self::Add,
             TokenKind::Symbol(Symbol::Sub) => Self::Sub,
@@ -226,7 +228,7 @@ impl UnaryOp {
         return Some(op);
     }
 
-    pub fn try_parse_suffix<'a>(kind: TokenKind) -> Option<Self> {
+    pub fn try_parse_suffix(kind: TokenKind) -> Option<Self> {
         let op = match kind {
             TokenKind::Symbol(Symbol::Optional) => Self::Coalesce,
             TokenKind::Symbol(Symbol::BoolNot) => Self::Cascade,
@@ -265,7 +267,7 @@ impl BinOp {
         }
     }
 
-    pub fn try_parse<'a>(kind: TokenKind<'a>) -> Option<Self> {
+    pub fn try_parse(kind: TokenKind) -> Option<Self> {
         let op = match kind {
             TokenKind::Symbol(Symbol::Add) => Self::Add,
             TokenKind::Symbol(Symbol::Sub) => Self::Sub,

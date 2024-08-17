@@ -1,14 +1,16 @@
+use std::sync::Arc;
+
 use super::{StringSlice, ToStringSlice};
 
 #[derive(Debug)]
-pub struct StringParser<'a> {
-    pub src: &'a str,
+pub struct StringParser {
+    pub src: Arc<str>,
     idx: usize,
     idx_stack: Vec<usize>,
 }
 
-impl<'a> StringParser<'a> {
-    pub fn new(src: &'a str) -> Self {
+impl StringParser {
+    pub fn new(src: Arc<str>) -> Self {
         return Self {
             src,
             idx: 0,
@@ -24,7 +26,7 @@ impl<'a> StringParser<'a> {
         self.idx_stack.push(self.idx);
     }
 
-    pub fn commit(&mut self) -> Option<StringSlice<'a>> {
+    pub fn commit(&mut self) -> Option<StringSlice> {
         let start = self.idx_stack.pop()?;
 
         return Some(self.src.slice(start, self.idx));
@@ -65,7 +67,7 @@ impl<'a> StringParser<'a> {
         return false;
     }
 
-    pub fn while_char(&mut self, char: char) -> Option<StringSlice<'a>> {
+    pub fn while_char(&mut self, char: char) -> Option<StringSlice> {
         if !self.is_char(char) {
             return None;
         }
@@ -82,7 +84,7 @@ impl<'a> StringParser<'a> {
         return None;
     }
 
-    pub fn while_func(&mut self, f: fn(char) -> bool) -> Option<StringSlice<'a>> {
+    pub fn while_func(&mut self, f: fn(char) -> bool) -> Option<StringSlice> {
         if !self.is_func(f) {
             return None;
         }
@@ -99,7 +101,7 @@ impl<'a> StringParser<'a> {
         return None;
     }
 
-    pub fn try_consume_str(&mut self, s: &str) -> Option<StringSlice<'a>> {
+    pub fn try_consume_str(&mut self, s: &str) -> Option<StringSlice> {
         self.checkout();
         let mut chars = s.chars();
 
@@ -121,19 +123,21 @@ impl<'a> StringParser<'a> {
 
 #[cfg(test)]
 mod test {
+    use std::sync::Arc;
+
     use crate::string::StringSlice;
 
     use super::StringParser;
 
     #[test]
     fn try_consume_str() {
-        let s = "some string";
-        let mut parser = StringParser::new(s);
+        let s: Arc<str> = "some string".into();
+        let mut parser = StringParser::new(s.clone());
 
         assert_eq!(
-            parser.try_consume_str(s),
+            parser.try_consume_str(&s),
             Some(StringSlice {
-                src: s,
+                src: s.clone(),
                 start: 0,
                 end: s.len()
             })
@@ -146,13 +150,13 @@ mod test {
 
     #[test]
     fn while_char() {
-        let s = "sssssssss";
-        let mut parser = StringParser::new(s);
+        let s: Arc<str> = "sssssssss".into();
+        let mut parser = StringParser::new(s.clone());
 
         assert_eq!(
             parser.while_char('s'),
             Some(StringSlice {
-                src: s,
+                src: s.clone(),
                 start: 0,
                 end: s.len()
             })
@@ -165,13 +169,13 @@ mod test {
 
     #[test]
     fn while_func() {
-        let s = "sssssssss";
-        let mut parser = StringParser::new(s);
+        let s: Arc<str> = "sssssssss".into();
+        let mut parser = StringParser::new(s.clone());
 
         assert_eq!(
             parser.while_func(char::is_alphabetic),
             Some(StringSlice {
-                src: s,
+                src: s.clone(),
                 start: 0,
                 end: s.len()
             })

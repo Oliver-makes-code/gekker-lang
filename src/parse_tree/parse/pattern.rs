@@ -14,9 +14,9 @@ use crate::{
 
 use super::{error::ParserError, expr::parse_generics_instance};
 
-type PatternResult<'a> = Result<Pattern<'a>, ParserError<'a>>;
+type PatternResult = Result<Pattern, ParserError>;
 
-pub fn parse_pattern<'a>(tokenizer: &mut Tokenizer<'a>) -> PatternResult<'a> {
+pub fn parse_pattern(tokenizer: &mut Tokenizer) -> PatternResult {
     let base = parse_value(tokenizer)?;
 
     let peek = tokenizer.peek(0)?;
@@ -25,7 +25,7 @@ pub fn parse_pattern<'a>(tokenizer: &mut Tokenizer<'a>) -> PatternResult<'a> {
     };
     tokenizer.next()?;
 
-    let start = base.slice;
+    let start = base.slice.clone();
 
     let mut values = vec![base];
 
@@ -38,7 +38,7 @@ pub fn parse_pattern<'a>(tokenizer: &mut Tokenizer<'a>) -> PatternResult<'a> {
         let peek = tokenizer.peek(0)?;
         let TokenKind::Symbol(Symbol::BitOr) = peek.kind else {
             return Ok(Pattern {
-                slice: start.merge(end),
+                slice: start.merge(&end),
                 kind: PatternKind::Or(values),
             });
         };
@@ -47,7 +47,7 @@ pub fn parse_pattern<'a>(tokenizer: &mut Tokenizer<'a>) -> PatternResult<'a> {
 }
 
 /// TODO: Parse array initializer
-fn parse_value<'a>(tokenizer: &mut Tokenizer<'a>) -> PatternResult<'a> {
+fn parse_value(tokenizer: &mut Tokenizer) -> PatternResult {
     let peek = tokenizer.peek(0)?;
     match peek.kind {
         TokenKind::Keyword(Keyword::Discard) => {
@@ -121,7 +121,7 @@ fn parse_value<'a>(tokenizer: &mut Tokenizer<'a>) -> PatternResult<'a> {
             };
 
             return Ok(Pattern {
-                slice: peek.slice.merge(next.slice),
+                slice: peek.slice.merge(&next.slice),
                 kind: PatternKind::Value { is_mut: true, name },
             });
         }
@@ -140,7 +140,7 @@ fn parse_value<'a>(tokenizer: &mut Tokenizer<'a>) -> PatternResult<'a> {
                 let list = parse_initializer_pattern(tokenizer)?;
 
                 return Ok(Pattern {
-                    slice: slice.merge(list.slice),
+                    slice: slice.merge(&list.slice),
                     kind: PatternKind::Initializer {
                         name,
                         generics,
@@ -162,9 +162,7 @@ fn parse_value<'a>(tokenizer: &mut Tokenizer<'a>) -> PatternResult<'a> {
     }
 }
 
-fn parse_initializer_pattern<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<InitializerPattern<'a>, ParserError<'a>> {
+fn parse_initializer_pattern(tokenizer: &mut Tokenizer) -> Result<InitializerPattern, ParserError> {
     let next = tokenizer.next()?;
     let TokenKind::Symbol(Symbol::BraceOpen) = next.kind else {
         return Err(ParserError::unexpected_token(next));
@@ -177,7 +175,7 @@ fn parse_initializer_pattern<'a>(
         TokenKind::Symbol(Symbol::BraceClose) => {
             tokenizer.next()?;
             return Ok(InitializerPattern {
-                slice: start.merge(peek.slice),
+                slice: start.merge(&peek.slice),
                 kind: InitializerPatternKind::Empty,
             });
         }
@@ -210,7 +208,7 @@ fn parse_initializer_pattern<'a>(
             };
 
             return Ok(InitializerPattern {
-                slice: start.merge(next.slice),
+                slice: start.merge(&next.slice),
                 kind: InitializerPatternKind::Named(values),
             });
         }
@@ -243,16 +241,16 @@ fn parse_initializer_pattern<'a>(
             };
 
             return Ok(InitializerPattern {
-                slice: start.merge(next.slice),
+                slice: start.merge(&next.slice),
                 kind: InitializerPatternKind::Expr(values),
             });
         }
     }
 }
 
-fn parse_named_initializer_pattern<'a>(
-    tokenizer: &mut Tokenizer<'a>,
-) -> Result<NamedInitializerPattern<'a>, ParserError<'a>> {
+fn parse_named_initializer_pattern(
+    tokenizer: &mut Tokenizer,
+) -> Result<NamedInitializerPattern, ParserError> {
     let next = tokenizer.next()?;
     let TokenKind::Symbol(Symbol::Dot) = next.kind else {
         return Err(ParserError::unexpected_token(next));
@@ -272,7 +270,7 @@ fn parse_named_initializer_pattern<'a>(
     let value = parse_pattern(tokenizer)?;
 
     return Ok(NamedInitializerPattern {
-        slice: start.merge(value.slice),
+        slice: start.merge(&value.slice),
         name,
         value,
     });

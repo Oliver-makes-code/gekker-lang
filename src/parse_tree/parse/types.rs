@@ -11,7 +11,7 @@ use crate::{
 
 use super::{decl::parse_struct_body, error::ParserError};
 
-pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserError<'a>> {
+pub fn parse_type(tokenizer: &mut Tokenizer) -> Result<Type, ParserError> {
     let peek = tokenizer.peek(0)?;
 
     if let Some(primitive) = TypeKind::try_from_primitive(peek.kind.clone()) {
@@ -23,7 +23,7 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
     }
 
     if let Some(idents) = IdentPath::try_parse(tokenizer)? {
-        let start = idents.slice;
+        let start = idents.slice.clone();
         let peek = tokenizer.peek(0)?;
         if let TokenKind::Symbol(Symbol::Colon) = peek.kind {
             tokenizer.next()?;
@@ -47,7 +47,7 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
                         TokenKind::Symbol(Symbol::Comma) => {}
                         TokenKind::Symbol(Symbol::Greater) => {
                             return Ok(Type {
-                                slice: start.merge(next.slice),
+                                slice: start.merge(&next.slice),
                                 kind: TypeKind::UserDefined {
                                     path: idents,
                                     generics: params,
@@ -63,7 +63,7 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
             let end = peek.slice;
 
             return Ok(Type {
-                slice: start.merge(end),
+                slice: start.merge(&end),
                 kind: TypeKind::UserDefined {
                     path: idents,
                     generics: vec![],
@@ -82,7 +82,7 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
     if let Some((slice, ref_kind)) = RefKind::parse(tokenizer)? {
         let referenced = parse_type(tokenizer)?;
         return Ok(Type {
-            slice: slice.merge(referenced.slice),
+            slice: slice.merge(&referenced.slice),
             kind: TypeKind::Ref {
                 ref_kind,
                 ty: Box::new(referenced),
@@ -96,7 +96,7 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
             let start = peek.slice;
             let value = parse_type(tokenizer)?;
             return Ok(Type {
-                slice: start.merge(value.slice),
+                slice: start.merge(&value.slice),
                 kind: TypeKind::Option(Box::new(value)),
             });
         }
@@ -105,7 +105,7 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
             let start = peek.slice;
             let value = parse_type(tokenizer)?;
             return Ok(Type {
-                slice: start.merge(value.slice),
+                slice: start.merge(&value.slice),
                 kind: TypeKind::Range(Box::new(value)),
             });
         }
@@ -134,7 +134,7 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
                     };
 
                     return Ok(Type {
-                        slice: start.merge(next.slice),
+                        slice: start.merge(&next.slice),
                         kind: TypeKind::Array {
                             ty: Box::new(value),
                             len: count as usize,
@@ -144,7 +144,7 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
                 TokenKind::Symbol(Symbol::BracketClose) => {
                     tokenizer.next()?;
                     return Ok(Type {
-                        slice: start.merge(peek.slice),
+                        slice: start.merge(&peek.slice),
                         kind: TypeKind::Slice(Box::new(value)),
                     });
                 }
@@ -178,17 +178,16 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
 
             let TokenKind::Symbol(Symbol::Colon) = peek.kind else {
                 return Ok(Type {
-                    slice: start.merge(end),
+                    slice: start.merge(&end),
                     kind: TypeKind::Func { params, ret: None },
                 });
             };
             tokenizer.next()?;
 
             let ret = parse_type(tokenizer)?;
-            let end = ret.slice;
 
             return Ok(Type {
-                slice: start.merge(end),
+                slice: start.merge(&ret.slice),
                 kind: TypeKind::Func {
                     params,
                     ret: Some(Box::new(ret)),
@@ -202,7 +201,7 @@ pub fn parse_type<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Type<'a>, ParserE
             let body = parse_struct_body(tokenizer)?;
 
             return Ok(Type {
-                slice: start.merge(body.slice),
+                slice: start.merge(&body.slice),
                 kind: TypeKind::Struct(body),
             });
         }

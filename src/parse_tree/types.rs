@@ -9,13 +9,13 @@ use crate::{
 use super::{decl::StructBody, parse::error::ParserError, IdentPath};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Type<'a> {
-    pub slice: StringSlice<'a>,
-    pub kind: TypeKind<'a>,
+pub struct Type {
+    pub slice: StringSlice,
+    pub kind: TypeKind,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum TypeKind<'a> {
+pub enum TypeKind {
     Char,
     Bool,
 
@@ -42,28 +42,28 @@ pub enum TypeKind<'a> {
 
     Ref {
         ref_kind: RefKind,
-        ty: Box<Type<'a>>,
+        ty: Box<Type>,
     },
 
     Array {
-        ty: Box<Type<'a>>,
+        ty: Box<Type>,
         len: usize,
     },
-    Slice(Box<Type<'a>>),
+    Slice(Box<Type>),
 
-    Option(Box<Type<'a>>),
-    Range(Box<Type<'a>>),
+    Option(Box<Type>),
+    Range(Box<Type>),
 
     Func {
-        params: Vec<Type<'a>>,
-        ret: Option<Box<Type<'a>>>,
+        params: Vec<Type>,
+        ret: Option<Box<Type>>,
     },
 
-    Struct(StructBody<'a>),
+    Struct(StructBody),
 
     UserDefined {
-        path: IdentPath<'a>,
-        generics: Vec<Type<'a>>,
+        path: IdentPath,
+        generics: Vec<Type>,
     },
 }
 
@@ -74,7 +74,7 @@ pub enum RefKind {
     Pointer,
 }
 
-impl<'a> TypeKind<'a> {
+impl TypeKind {
     pub fn try_from_primitive(token: TokenKind) -> Option<Self> {
         return Some(match token {
             TokenKind::Keyword(Keyword::Char) => Self::Char,
@@ -107,9 +107,7 @@ impl<'a> TypeKind<'a> {
 }
 
 impl RefKind {
-    pub fn parse<'a>(
-        tokenizer: &mut Tokenizer<'a>,
-    ) -> Result<Option<(StringSlice<'a>, Self)>, ParserError<'a>> {
+    pub fn parse(tokenizer: &mut Tokenizer) -> Result<Option<(StringSlice, Self)>, ParserError> {
         let peek = tokenizer.peek(0)?;
 
         match peek.kind {
@@ -123,7 +121,7 @@ impl RefKind {
                 let peek = tokenizer.peek(0)?;
                 if let TokenKind::Keyword(Keyword::Mut) = peek.kind {
                     tokenizer.next()?;
-                    return Ok(Some((start.merge(peek.slice), Self::Mutable)));
+                    return Ok(Some((start.merge(&peek.slice), Self::Mutable)));
                 }
                 return Ok(Some((start, Self::Immutable)));
             }
