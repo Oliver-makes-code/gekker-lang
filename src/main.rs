@@ -1,16 +1,11 @@
 #![feature(decl_macro, let_chains, assert_matches, box_patterns)]
 
-use fs_queue::SourceError;
+use parse_tree::parse::error::ParserError;
 
-pub mod fs_queue;
 pub mod parse_tree;
 pub mod string;
 pub mod tokenizer;
 
-fn main() -> Result<(), SourceError> {
-    fs_queue::load_all_source();
-
-    fs_queue::parse_trees()?;
-
+fn main() -> Result<(), ParserError> {
     Ok(())
 }
