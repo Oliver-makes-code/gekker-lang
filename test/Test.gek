@@ -1,3 +1,5 @@
-func Test(): u32 {
+namespace Wawa;
+
+func Test(): i32 {
     return 0;
 }

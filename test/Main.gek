@@ -1,3 +1,5 @@
+#import "./Test.gek";
+
 namespace Wawa::Test;
 
 using X::Y;

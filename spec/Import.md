@@ -6,6 +6,8 @@ To import other files, we use a similar syntax to how C does it. That does not m
 #import "./some_file.gek";
 ```
 
+Note: Importing a gekker file doesn't include it's code in compilation (unless generics are used), it's only used to provide definitions.
+
 The import statement also supports importing C headers, for interop with C code (or C++ with a C interface)
 
 ```
