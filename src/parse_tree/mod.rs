@@ -1,6 +1,6 @@
 use std::{fmt::Debug, sync::Arc};
 
-use decl::DeclLvl1;
+use decl::{DeclLvl1, DeclModifier, ImportDecl, NamespaceDecl};
 use parse::error::ParserError;
 
 use crate::{
@@ -21,7 +21,10 @@ pub mod types;
 #[derive(Debug, Clone, PartialEq)]
 pub struct ParseTree {
     pub slice: StringSlice,
-    pub body: Vec<DeclLvl1>,
+    pub imports: Vec<ImportDecl>,
+    pub namespace: Option<NamespaceDecl>,
+    pub usings: Vec<NamespaceDecl>,
+    pub body: Vec<DeclModifier<DeclLvl1>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

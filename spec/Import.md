@@ -1,9 +1,9 @@
 # Import
 
-To import other files, we use a similar syntax to how C does it. That does not mean we have a C-style preprocessor, though.
+We have imports since this is a file based compiler.
 
 ```
-#import "./some_file.gek";
+import "./some_file.gek";
 ```
 
 Note: Importing a gekker file doesn't include it's code in compilation (unless generics are used), it's only used to provide definitions.
@@ -11,7 +11,7 @@ Note: Importing a gekker file doesn't include it's code in compilation (unless g
 The import statement also supports importing C headers, for interop with C code (or C++ with a C interface)
 
 ```
-#import "./some_header.h"
+import "./some_header.h"
 ```
 
 At some point, compiler plugins will exist that can handle importing of other file types.

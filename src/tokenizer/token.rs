@@ -44,6 +44,7 @@ pub enum Keyword {
     Where,
     Namespace,
     Union,
+    Import,
 
     // Builtin types
     Bool,
@@ -203,6 +204,7 @@ impl Keyword {
             "where" => Self::Where,
             "namespace" => Self::Namespace,
             "union" => Self::Union,
+            "import" => Self::Import,
 
             "bool" => Self::Bool,
             "char" => Self::Char,

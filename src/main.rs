@@ -1,11 +1,20 @@
 #![feature(decl_macro, let_chains, assert_matches, box_patterns)]
 
-use parse_tree::parse::error::ParserError;
+use std::{fs::File, io::Read};
+
+use parse_tree::parse::parse_root;
+use tokenizer::Tokenizer;
 
 pub mod parse_tree;
 pub mod string;
 pub mod tokenizer;
 
-fn main() -> Result<(), ParserError> {
-    Ok(())
+fn main() {
+    let mut file = File::open("test/Main.gek").unwrap();
+    let mut src = String::new();
+    file.read_to_string(&mut src).unwrap();
+
+    let mut tokenizer = Tokenizer::new(src.into());
+
+    println!("{:#?}", parse_root(&mut tokenizer));
 }

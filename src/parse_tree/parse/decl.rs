@@ -3,11 +3,11 @@ use std::fmt::Debug;
 use crate::{
     parse_tree::{
         decl::{
-            Attr, Attrs, ClauseKind, DeclLvl1, DeclLvl1Kind, DeclLvl2, DeclLvl2Kind, DeclLvl3,
-            DeclLvl3Kind, DeclModifier, EnumDecl, EnumDeclKind, FuncBody, FuncBodyKind, FuncParam,
-            FunctionDecl, GenericType, GenericsDecl, ImplDecl, IntEnumBody, IntEnumParam,
-            IntEnumType, NamespaceDecl, StructBody, StructDecl, StructDeclKind, StructParam,
-            ThisParam, TraitBody, TraitDecl, TypeClause, UnionDecl, VariableDecl,
+            Attr, Attrs, ClauseKind, DeclLvl1, DeclLvl1Kind, DeclLvl2, DeclLvl2Kind, DeclModifier,
+            EnumDecl, EnumDeclKind, FuncBody, FuncBodyKind, FuncParam, FunctionDecl, GenericType,
+            GenericsDecl, ImplDecl, ImportDecl, IntEnumBody, IntEnumParam, IntEnumType,
+            NamespaceDecl, StructBody, StructDecl, StructDeclKind, StructParam, ThisParam,
+            TraitBody, TraitDecl, TypeClause, UnionDecl, VariableDecl,
         },
         statement::{FunctionModifier, VariableModifier, VariableName},
         types::{RefKind, Type},
@@ -22,29 +22,10 @@ use crate::{
 
 use super::{error::ParserError, expr::parse_expr, statement::parse_block, types::parse_type};
 
-pub fn parse_lvl_1_decl(tokenizer: &mut Tokenizer) -> Result<Option<DeclLvl1>, ParserError> {
-    if let Some(decl) = parse_lvl_2_decl(tokenizer)? {
-        return Ok(Some(DeclLvl1 {
-            slice: decl.slice.clone(),
-            kind: DeclLvl1Kind::Lvl2(decl),
-        }));
-    }
-
-    if let Some(namespace) = parse_namespace(tokenizer)? {
-        return Ok(Some(DeclLvl1 {
-            slice: namespace.slice.clone(),
-            kind: DeclLvl1Kind::Namespace(namespace),
-        }));
-    }
-
-    if let Some(using) = parse_using(tokenizer)? {
-        return Ok(Some(DeclLvl1 {
-            slice: using.slice.clone(),
-            kind: DeclLvl1Kind::Using(using),
-        }));
-    }
-
-    Ok(None)
+pub fn parse_lvl_1_decl(
+    tokenizer: &mut Tokenizer,
+) -> Result<Option<DeclModifier<DeclLvl1>>, ParserError> {
+    return parse_modifiers(tokenizer, parse_lvl_1_decl_raw, |it| it.slice.clone());
 }
 
 pub fn parse_lvl_2_decl(
@@ -53,70 +34,64 @@ pub fn parse_lvl_2_decl(
     return parse_modifiers(tokenizer, parse_lvl_2_decl_raw, |it| it.slice.clone());
 }
 
-pub fn parse_lvl_3_decl(
-    tokenizer: &mut Tokenizer,
-) -> Result<Option<DeclModifier<DeclLvl3>>, ParserError> {
-    return parse_modifiers(tokenizer, parse_lvl_3_decl_raw, |it| it.slice.clone());
-}
-
-fn parse_lvl_2_decl_raw(tokenizer: &mut Tokenizer) -> Result<Option<DeclLvl2>, ParserError> {
-    if let Some(lvl3) = parse_lvl_3_decl_raw(tokenizer)? {
-        return Ok(Some(DeclLvl2 {
-            slice: lvl3.slice.clone(),
-            kind: DeclLvl2Kind::Lvl3(lvl3),
+fn parse_lvl_1_decl_raw(tokenizer: &mut Tokenizer) -> Result<Option<DeclLvl1>, ParserError> {
+    if let Some(lvl2) = parse_lvl_2_decl_raw(tokenizer)? {
+        return Ok(Some(DeclLvl1 {
+            slice: lvl2.slice.clone(),
+            kind: DeclLvl1Kind::Lvl2(lvl2),
         }));
     }
 
     if let Some(st) = parse_struct_decl(tokenizer)? {
-        return Ok(Some(DeclLvl2 {
+        return Ok(Some(DeclLvl1 {
             slice: st.slice.clone(),
-            kind: DeclLvl2Kind::Struct(st),
+            kind: DeclLvl1Kind::Struct(st),
         }));
     }
 
     if let Some(en) = parse_enum_decl(tokenizer)? {
-        return Ok(Some(DeclLvl2 {
+        return Ok(Some(DeclLvl1 {
             slice: en.slice.clone(),
-            kind: DeclLvl2Kind::Enum(en),
+            kind: DeclLvl1Kind::Enum(en),
         }));
     }
 
     if let Some(un) = parse_union_decl(tokenizer)? {
-        return Ok(Some(DeclLvl2 {
+        return Ok(Some(DeclLvl1 {
             slice: un.slice.clone(),
-            kind: DeclLvl2Kind::Union(un),
+            kind: DeclLvl1Kind::Union(un),
         }));
     }
 
     if let Some(tr) = parse_trait_decl(tokenizer)? {
-        return Ok(Some(DeclLvl2 {
+        return Ok(Some(DeclLvl1 {
             slice: tr.slice.clone(),
-            kind: DeclLvl2Kind::Trait(tr),
+            kind: DeclLvl1Kind::Trait(tr),
         }));
     }
 
     if let Some(im) = parse_impl_decl(tokenizer)? {
-        return Ok(Some(DeclLvl2 {
+        return Ok(Some(DeclLvl1 {
             slice: im.slice.clone(),
-            kind: DeclLvl2Kind::Impl(im),
+            kind: DeclLvl1Kind::Impl(im),
         }));
     }
 
     return Ok(None);
 }
 
-fn parse_lvl_3_decl_raw(tokenizer: &mut Tokenizer) -> Result<Option<DeclLvl3>, ParserError> {
+fn parse_lvl_2_decl_raw(tokenizer: &mut Tokenizer) -> Result<Option<DeclLvl2>, ParserError> {
     if let Some(var) = parse_var_decl(tokenizer)? {
-        return Ok(Some(DeclLvl3 {
+        return Ok(Some(DeclLvl2 {
             slice: var.slice.clone(),
-            kind: DeclLvl3Kind::Variable(var),
+            kind: DeclLvl2Kind::Variable(var),
         }));
     }
 
     if let Some(func) = parse_func_decl(tokenizer)? {
-        return Ok(Some(DeclLvl3 {
+        return Ok(Some(DeclLvl2 {
             slice: func.slice.clone(),
-            kind: DeclLvl3Kind::Function(func),
+            kind: DeclLvl2Kind::Function(func),
         }));
     }
 
@@ -163,6 +138,30 @@ where
         generics,
         is_pub,
         value,
+    }));
+}
+
+pub fn parse_import(tokenizer: &mut Tokenizer) -> Result<Option<ImportDecl>, ParserError> {
+    let peek = tokenizer.peek(0)?;
+    let TokenKind::Keyword(Keyword::Import) = peek.kind else {
+        return Ok(None);
+    };
+    tokenizer.next()?;
+    let start = peek.slice.clone();
+
+    let next = tokenizer.next()?;
+    let TokenKind::String(path) = next.kind else {
+        return Err(ParserError::unexpected_token(next));
+    };
+
+    let next = tokenizer.next()?;
+    let TokenKind::Symbol(Symbol::Semicolon) = next.kind else {
+        return Err(ParserError::unexpected_token(next));
+    };
+
+    return Ok(Some(ImportDecl {
+        slice: start.merge(&next.slice),
+        path,
     }));
 }
 
@@ -757,7 +756,7 @@ pub fn parse_trait_body(tokenizer: &mut Tokenizer) -> Result<TraitBody, ParserEr
 
     loop {
         let peek = tokenizer.peek(0)?;
-        let Some(decl) = parse_lvl_3_decl(tokenizer)? else {
+        let Some(decl) = parse_lvl_2_decl(tokenizer)? else {
             return Err(ParserError::unexpected_token(peek));
         };
 

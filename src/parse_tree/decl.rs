@@ -24,7 +24,7 @@ where
     pub value: T,
 }
 
-/// Allowed in top-level code
+/// Allowed to be public, have properties, and have generics
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeclLvl1 {
     pub slice: StringSlice,
@@ -33,26 +33,18 @@ pub struct DeclLvl1 {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclLvl1Kind {
-    Namespace(NamespaceDecl),
-    Using(NamespaceDecl),
-    Lvl2(DeclModifier<DeclLvl2>),
-}
-
-/// Allowed to be public, have properties, and have generics
-#[derive(Debug, Clone, PartialEq)]
-pub struct DeclLvl2 {
-    pub slice: StringSlice,
-    pub kind: DeclLvl2Kind,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum DeclLvl2Kind {
     Enum(EnumDecl),
     Union(UnionDecl),
     Struct(StructDecl),
     Trait(TraitDecl),
     Impl(ImplDecl),
-    Lvl3(DeclLvl3),
+    Lvl2(DeclLvl2),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ImportDecl {
+    pub slice: StringSlice,
+    pub path: Arc<str>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -79,7 +71,7 @@ pub struct TraitDecl {
 #[derive(Debug, Clone, PartialEq)]
 pub struct TraitBody {
     pub slice: StringSlice,
-    pub decls: Vec<DeclModifier<DeclLvl3>>,
+    pub decls: Vec<DeclModifier<DeclLvl2>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -117,13 +109,13 @@ pub enum StructDeclKind {
 
 /// Allowed in top-level code and trait impls
 #[derive(Debug, Clone, PartialEq)]
-pub struct DeclLvl3 {
+pub struct DeclLvl2 {
     pub slice: StringSlice,
-    pub kind: DeclLvl3Kind,
+    pub kind: DeclLvl2Kind,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum DeclLvl3Kind {
+pub enum DeclLvl2Kind {
     Function(FunctionDecl),
     Variable(VariableDecl),
 }

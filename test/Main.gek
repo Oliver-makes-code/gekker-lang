@@ -1,4 +1,4 @@
-#import "./Test.gek";
+import "./Test.gek";
 
 namespace Wawa::Test;
 
