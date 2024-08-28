@@ -8,7 +8,7 @@ func Main(args: ref [ref str]): i32 {
     return 0;
 }
 
-#[ehehe(yippee)]
+#[ehehe(owo = uwu, nya)]
 where T;
 pub trait Mwehehe {
     func DoSomething(this): This;

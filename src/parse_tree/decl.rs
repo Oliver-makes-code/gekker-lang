@@ -6,7 +6,7 @@ use crate::{
 };
 
 use super::{
-    expr::Expr,
+    expr::{Expr, PrimitiveExpr},
     statement::{Block, FunctionModifier, VariableModifier, VariableName},
     types::{RefKind, Type},
     IdentPath,
@@ -176,7 +176,20 @@ pub struct Attrs {
 pub struct Attr {
     pub slice: StringSlice,
     pub name: Arc<str>,
-    pub params: Vec<Expr>,
+    pub params: Vec<AttrParam>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct AttrParam {
+    pub slice: StringSlice,
+    pub name: Option<Arc<str>>,
+    pub value: AttrParamKind,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum AttrParamKind {
+    Value(PrimitiveExpr),
+    Ident(Arc<str>),
 }
 
 #[derive(Debug, Clone, PartialEq)]

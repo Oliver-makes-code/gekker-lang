@@ -6,6 +6,7 @@ use parse_tree::parse::parse_root;
 use tokenizer::Tokenizer;
 
 pub mod parse_tree;
+pub mod semantic_model;
 pub mod string;
 pub mod tokenizer;
 

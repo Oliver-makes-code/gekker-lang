@@ -3,7 +3,7 @@ use crate::{
         expr::{
             AccessKind, BinOp, DefaultedInitializer, Expr, ExprKind, GenericsInstance,
             InitializerKind, InitializerList, LambdaCapture, LambdaCaptures, LambdaParam,
-            LambdaParams, NamedInitializer, UnaryOp,
+            LambdaParams, NamedInitializer, PrimitiveExpr, PrimitiveExprKind, UnaryOp,
         },
         parse::types::parse_type,
         IdentPath,
@@ -250,21 +250,21 @@ fn parse_atom(tokenizer: &mut Tokenizer) -> ExprResult {
         return Ok(Some(ident));
     }
 
+    if let Some(primitive) = parse_primitive(tokenizer)? {
+        return Ok(Some(Expr {
+            slice: primitive.slice.clone(),
+            kind: ExprKind::Primitive(primitive),
+        }));
+    }
+
     let token = tokenizer.peek(0)?;
 
     let slice = token.slice;
 
     let kind = match token.kind {
-        TokenKind::Char(c) => ExprKind::Char(c),
-        TokenKind::Number(n) => ExprKind::Number(n),
-        TokenKind::String(s) => ExprKind::String(s),
         TokenKind::Keyword(Keyword::Discard) => ExprKind::Discard,
         TokenKind::Keyword(Keyword::ThisValue) => ExprKind::This,
-        TokenKind::Keyword(Keyword::Default) => ExprKind::Default,
-        TokenKind::Keyword(Keyword::True) => ExprKind::Bool(true),
-        TokenKind::Keyword(Keyword::False) => ExprKind::Bool(false),
         TokenKind::Keyword(Keyword::Nullptr) => ExprKind::Nullptr,
-        TokenKind::Keyword(Keyword::Unit) => ExprKind::Unit,
         TokenKind::Keyword(Keyword::Func) => {
             tokenizer.next()?;
             let params = parse_lambda_params(tokenizer)?;
@@ -344,6 +344,29 @@ fn parse_atom(tokenizer: &mut Tokenizer) -> ExprResult {
     tokenizer.next()?;
 
     return Ok(Some(Expr { slice, kind }));
+}
+
+pub fn parse_primitive(tokenizer: &mut Tokenizer) -> Result<Option<PrimitiveExpr>, ParserError> {
+    let token = tokenizer.peek(0)?;
+
+    let slice = token.slice;
+
+    let kind = match token.kind {
+        TokenKind::Char(c) => PrimitiveExprKind::Char(c),
+        TokenKind::Number(n) => PrimitiveExprKind::Number(n),
+        TokenKind::String(s) => PrimitiveExprKind::String(s),
+        TokenKind::Keyword(Keyword::Default) => PrimitiveExprKind::Default,
+        TokenKind::Keyword(Keyword::True) => PrimitiveExprKind::Bool(true),
+        TokenKind::Keyword(Keyword::False) => PrimitiveExprKind::Bool(false),
+        TokenKind::Keyword(Keyword::Unit) => PrimitiveExprKind::Unit,
+        _ => {
+            return Ok(None);
+        }
+    };
+
+    tokenizer.next()?;
+
+    return Ok(Some(PrimitiveExpr { slice, kind }));
 }
 
 fn parse_ident(tokenizer: &mut Tokenizer) -> ExprResult {
@@ -695,7 +718,7 @@ mod test {
 
     use crate::{
         parse_tree::{
-            expr::{BinOp, Expr, ExprKind},
+            expr::{BinOp, Expr, ExprKind, PrimitiveExpr, PrimitiveExprKind},
             parse::{error::ParserError, expr::parse_expr},
         },
         tokenizer::{token::Number, Tokenizer},
@@ -714,9 +737,12 @@ mod test {
             tree,
             Some(Expr {
                 slice: _,
-                kind: ExprKind::Number(Number {
-                    whole: 15,
-                    decimal: 0.0
+                kind: ExprKind::Primitive(PrimitiveExpr {
+                    slice: _,
+                    kind: PrimitiveExprKind::Number(Number {
+                        whole: 15,
+                        decimal: 0.0
+                    })
                 })
             })
         );
@@ -741,9 +767,13 @@ mod test {
                             box Expr {
                                 slice: _,
                                 kind:
-                                    ExprKind::Number(Number {
-                                        whole: 1,
-                                        decimal: 0.0,
+                                    ExprKind::Primitive(PrimitiveExpr {
+                                        slice: _,
+                                        kind:
+                                            PrimitiveExprKind::Number(Number {
+                                                whole: 1,
+                                                decimal: 0.0,
+                                            }),
                                     }),
                             },
                         op: BinOp::Add,
@@ -756,9 +786,13 @@ mod test {
                                             box Expr {
                                                 slice: _,
                                                 kind:
-                                                    ExprKind::Number(Number {
-                                                        whole: 2,
-                                                        decimal: 0.0,
+                                                    ExprKind::Primitive(PrimitiveExpr {
+                                                        slice: _,
+                                                        kind:
+                                                            PrimitiveExprKind::Number(Number {
+                                                                whole: 2,
+                                                                decimal: 0.0,
+                                                            }),
                                                     }),
                                             },
                                         op: BinOp::Mul,
@@ -766,9 +800,13 @@ mod test {
                                             box Expr {
                                                 slice: _,
                                                 kind:
-                                                    ExprKind::Number(Number {
-                                                        whole: 2,
-                                                        decimal: 0.0,
+                                                    ExprKind::Primitive(PrimitiveExpr {
+                                                        slice: _,
+                                                        kind:
+                                                            PrimitiveExprKind::Number(Number {
+                                                                whole: 2,
+                                                                decimal: 0.0,
+                                                            }),
                                                     }),
                                             },
                                     },
@@ -791,10 +829,13 @@ mod test {
             tree,
             Some(Expr {
                 slice: _,
-                kind: ExprKind::Number(Number {
-                    whole: 123,
-                    decimal: 0.0
-                })
+                kind: ExprKind::Primitive(PrimitiveExpr {
+                    slice: _,
+                    kind: PrimitiveExprKind::Number(Number {
+                        whole: 123,
+                        decimal: 0.0,
+                    })
+                }),
             })
         );
 

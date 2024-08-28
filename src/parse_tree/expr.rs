@@ -61,14 +61,25 @@ pub enum ExprKind {
     },
     SizeofType(Type),
     SizeofValue(Box<Expr>),
+    Primitive(PrimitiveExpr),
+    This,
+    Nullptr,
+    Discard,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct PrimitiveExpr {
+    pub slice: StringSlice,
+    pub kind: PrimitiveExprKind,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum PrimitiveExprKind {
     Number(Number),
     String(Arc<str>),
     Char(char),
     Bool(bool),
-    This,
     Default,
-    Nullptr,
-    Discard,
     Unit,
 }
 
