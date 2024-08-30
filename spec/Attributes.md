@@ -1,5 +1,7 @@
 # Attributes
 
+Currently disabled until I can figure them out further.
+
 Attributes are a lot like decorators in Python, annotations in Java, or
 attributes in C#. They can modify the behaviour of a declarators at compile
 time, check semantics of a declarator, etc.
