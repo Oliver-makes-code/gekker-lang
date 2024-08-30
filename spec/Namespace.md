@@ -32,14 +32,8 @@ func Main() {
 }
 ```
 
-You can also assign them to specific keywords
+You can also assign them to specific identifiers
 
 ```
 using Std::Random = Rand;
-```
-
-This also works for specific symbols in the package
-
-```
-using Std::Random::Next = NextRand;
 ```
