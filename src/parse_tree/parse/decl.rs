@@ -3,11 +3,11 @@ use std::fmt::Debug;
 use crate::{
     parse_tree::{
         decl::{
-            Attr, AttrParam, AttrParamKind, Attrs, ClauseKind, DeclLvl1, DeclLvl1Kind, DeclLvl2,
-            DeclLvl2Kind, DeclModifier, EnumDecl, EnumDeclKind, FuncBody, FuncBodyKind, FuncParam,
-            FunctionDecl, GenericType, GenericsDecl, ImplDecl, ImportDecl, IntEnumBody,
-            IntEnumParam, IntEnumType, NamespaceDecl, StructBody, StructDecl, StructDeclKind,
-            StructParam, ThisParam, TraitBody, TraitDecl, TypeClause, UnionDecl, VariableDecl,
+            ClauseKind, DeclLvl1, DeclLvl1Kind, DeclLvl2, DeclLvl2Kind, DeclModifier, EnumDecl,
+            EnumDeclKind, FuncBody, FuncBodyKind, FuncParam, FunctionDecl, GenericType,
+            GenericsDecl, ImplDecl, ImportDecl, IntEnumBody, IntEnumParam, IntEnumType,
+            NamespaceDecl, StructBody, StructDecl, StructDeclKind, StructParam, ThisParam,
+            TraitBody, TraitDecl, TypeClause, UnionDecl, VariableDecl,
         },
         statement::{FunctionModifier, VariableModifier, VariableName},
         types::{RefKind, Type},
@@ -20,12 +20,7 @@ use crate::{
     },
 };
 
-use super::{
-    error::ParserError,
-    expr::{parse_expr, parse_primitive},
-    statement::parse_block,
-    types::parse_type,
-};
+use super::{error::ParserError, expr::parse_expr, statement::parse_block, types::parse_type};
 
 pub fn parse_lvl_1_decl(
     tokenizer: &mut Tokenizer,
@@ -116,8 +111,6 @@ where
     let peek = tokenizer.peek(0)?;
     let start = peek.slice;
 
-    let attrs = parse_attrs(tokenizer)?;
-
     let generics = parse_generics_decl(tokenizer)?;
 
     let peek = tokenizer.peek(0)?;
@@ -131,7 +124,7 @@ where
 
     let peek = tokenizer.peek(0)?;
     let Some(value) = get(tokenizer)? else {
-        if attrs.is_some() || generics.is_some() || is_pub {
+        if generics.is_some() || is_pub {
             return Err(ParserError::unexpected_token(peek));
         }
         return Ok(None);
@@ -139,7 +132,6 @@ where
 
     return Ok(Some(DeclModifier {
         slice: start.merge(&slice(&value)),
-        attrs,
         generics,
         is_pub,
         value,
@@ -555,116 +547,116 @@ pub fn parse_var_decl(tokenizer: &mut Tokenizer) -> Result<Option<VariableDecl>,
     };
 }
 
-fn parse_attrs(tokenizer: &mut Tokenizer) -> Result<Option<Attrs>, ParserError> {
-    let peek = tokenizer.peek(0)?;
-    let TokenKind::Symbol(Symbol::Pound) = peek.kind else {
-        return Ok(None);
-    };
-    let start = peek.slice;
-    tokenizer.next()?;
+// fn parse_attrs(tokenizer: &mut Tokenizer) -> Result<Option<Attrs>, ParserError> {
+//     let peek = tokenizer.peek(0)?;
+//     let TokenKind::Symbol(Symbol::Pound) = peek.kind else {
+//         return Ok(None);
+//     };
+//     let start = peek.slice;
+//     tokenizer.next()?;
 
-    let next = tokenizer.next()?;
-    let TokenKind::Symbol(Symbol::BracketOpen) = next.kind else {
-        return Err(ParserError::unexpected_token(next));
-    };
+//     let next = tokenizer.next()?;
+//     let TokenKind::Symbol(Symbol::BracketOpen) = next.kind else {
+//         return Err(ParserError::unexpected_token(next));
+//     };
 
-    let mut attrs = vec![];
-    let mut last;
+//     let mut attrs = vec![];
+//     let mut last;
 
-    loop {
-        let attr = parse_attr(tokenizer)?;
-        attrs.push(attr);
+//     loop {
+//         let attr = parse_attr(tokenizer)?;
+//         attrs.push(attr);
 
-        let next = tokenizer.next()?;
-        last = next.slice.clone();
-        match next.kind {
-            TokenKind::Symbol(Symbol::Comma) => (),
-            TokenKind::Symbol(Symbol::BracketClose) => break,
-            _ => return Err(ParserError::unexpected_token(next)),
-        }
-    }
+//         let next = tokenizer.next()?;
+//         last = next.slice.clone();
+//         match next.kind {
+//             TokenKind::Symbol(Symbol::Comma) => (),
+//             TokenKind::Symbol(Symbol::BracketClose) => break,
+//             _ => return Err(ParserError::unexpected_token(next)),
+//         }
+//     }
 
-    return Ok(Some(Attrs {
-        slice: start.merge(&last),
-        attrs,
-    }));
-}
+//     return Ok(Some(Attrs {
+//         slice: start.merge(&last),
+//         attrs,
+//     }));
+// }
 
-fn parse_attr(tokenizer: &mut Tokenizer) -> Result<Attr, ParserError> {
-    let next = tokenizer.next()?;
-    let start = next.slice.clone();
+// fn parse_attr(tokenizer: &mut Tokenizer) -> Result<Attr, ParserError> {
+//     let next = tokenizer.next()?;
+//     let start = next.slice.clone();
 
-    let TokenKind::Identifier(name) = next.kind else {
-        return Err(ParserError::unexpected_token(next));
-    };
+//     let TokenKind::Identifier(name) = next.kind else {
+//         return Err(ParserError::unexpected_token(next));
+//     };
 
-    let peek = tokenizer.peek(0)?;
-    let TokenKind::Symbol(Symbol::ParenOpen) = peek.kind else {
-        return Ok(Attr {
-            slice: start,
-            name,
-            params: vec![],
-        });
-    };
-    tokenizer.next()?;
+//     let peek = tokenizer.peek(0)?;
+//     let TokenKind::Symbol(Symbol::ParenOpen) = peek.kind else {
+//         return Ok(Attr {
+//             slice: start,
+//             name,
+//             params: vec![],
+//         });
+//     };
+//     tokenizer.next()?;
 
-    let mut params = vec![];
-    let mut last;
+//     let mut params = vec![];
+//     let mut last;
 
-    loop {
-        let param = parse_attr_param(tokenizer)?;
+//     loop {
+//         let param = parse_attr_param(tokenizer)?;
 
-        params.push(param);
+//         params.push(param);
 
-        let next = tokenizer.next()?;
-        last = next.slice.clone();
+//         let next = tokenizer.next()?;
+//         last = next.slice.clone();
 
-        match next.kind {
-            TokenKind::Symbol(Symbol::Comma) => (),
-            TokenKind::Symbol(Symbol::ParenClose) => break,
-            _ => return Err(ParserError::unexpected_token(next)),
-        }
-    }
+//         match next.kind {
+//             TokenKind::Symbol(Symbol::Comma) => (),
+//             TokenKind::Symbol(Symbol::ParenClose) => break,
+//             _ => return Err(ParserError::unexpected_token(next)),
+//         }
+//     }
 
-    return Ok(Attr {
-        slice: start.merge(&last),
-        name,
-        params,
-    });
-}
+//     return Ok(Attr {
+//         slice: start.merge(&last),
+//         name,
+//         params,
+//     });
+// }
 
-fn parse_attr_param(tokenizer: &mut Tokenizer) -> Result<AttrParam, ParserError> {
-    let peek = tokenizer.peek(0)?;
-    let start = peek.slice.clone();
-    let name = if let TokenKind::Identifier(ident) = peek.kind
-        && tokenizer.peek(1)?.kind == TokenKind::Symbol(Symbol::Assign)
-    {
-        tokenizer.next()?;
-        tokenizer.next()?;
-        Some(ident)
-    } else {
-        None
-    };
+// fn parse_attr_param(tokenizer: &mut Tokenizer) -> Result<AttrParam, ParserError> {
+//     let peek = tokenizer.peek(0)?;
+//     let start = peek.slice.clone();
+//     let name = if let TokenKind::Identifier(ident) = peek.kind
+//         && tokenizer.peek(1)?.kind == TokenKind::Symbol(Symbol::Assign)
+//     {
+//         tokenizer.next()?;
+//         tokenizer.next()?;
+//         Some(ident)
+//     } else {
+//         None
+//     };
 
-    if let Some(primitive) = parse_primitive(tokenizer)? {
-        return Ok(AttrParam {
-            slice: start.merge(&primitive.slice),
-            name,
-            value: AttrParamKind::Value(primitive),
-        });
-    }
+//     if let Some(primitive) = parse_primitive(tokenizer)? {
+//         return Ok(AttrParam {
+//             slice: start.merge(&primitive.slice),
+//             name,
+//             value: AttrParamKind::Value(primitive),
+//         });
+//     }
 
-    let next = tokenizer.next()?;
-    let TokenKind::Identifier(ident) = next.kind.clone() else {
-        return Err(ParserError::unexpected_token(next));
-    };
+//     let next = tokenizer.next()?;
+//     let TokenKind::Identifier(ident) = next.kind.clone() else {
+//         return Err(ParserError::unexpected_token(next));
+//     };
 
-    return Ok(AttrParam {
-        slice: start.merge(&next.slice),
-        name,
-        value: AttrParamKind::Ident(ident),
-    });
-}
+//     return Ok(AttrParam {
+//         slice: start.merge(&next.slice),
+//         name,
+//         value: AttrParamKind::Ident(ident),
+//     });
+// }
 
 fn parse_generics_decl(tokenizer: &mut Tokenizer) -> Result<Option<GenericsDecl>, ParserError> {
     let peek = tokenizer.peek(0)?;

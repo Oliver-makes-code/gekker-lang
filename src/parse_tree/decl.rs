@@ -6,7 +6,7 @@ use crate::{
 };
 
 use super::{
-    expr::{Expr, PrimitiveExpr},
+    expr::Expr,
     statement::{Block, FunctionModifier, VariableModifier, VariableName},
     types::{RefKind, Type},
     IdentPath,
@@ -18,7 +18,6 @@ where
     T: Debug + Clone + PartialEq,
 {
     pub slice: StringSlice,
-    pub attrs: Option<Attrs>,
     pub generics: Option<GenericsDecl>,
     pub is_pub: bool,
     pub value: T,
@@ -166,31 +165,31 @@ pub enum ClauseKind {
     Default,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Attrs {
-    pub slice: StringSlice,
-    pub attrs: Vec<Attr>,
-}
+// #[derive(Debug, Clone, PartialEq)]
+// pub struct Attrs {
+//     pub slice: StringSlice,
+//     pub attrs: Vec<Attr>,
+// }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Attr {
-    pub slice: StringSlice,
-    pub name: Arc<str>,
-    pub params: Vec<AttrParam>,
-}
+// #[derive(Debug, Clone, PartialEq)]
+// pub struct Attr {
+//     pub slice: StringSlice,
+//     pub name: Arc<str>,
+//     pub params: Vec<AttrParam>,
+// }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct AttrParam {
-    pub slice: StringSlice,
-    pub name: Option<Arc<str>>,
-    pub value: AttrParamKind,
-}
+// #[derive(Debug, Clone, PartialEq)]
+// pub struct AttrParam {
+//     pub slice: StringSlice,
+//     pub name: Option<Arc<str>>,
+//     pub value: AttrParamKind,
+// }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum AttrParamKind {
-    Value(PrimitiveExpr),
-    Ident(Arc<str>),
-}
+// #[derive(Debug, Clone, PartialEq)]
+// pub enum AttrParamKind {
+//     Value(PrimitiveExpr),
+//     Ident(Arc<str>),
+// }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FuncBody {
